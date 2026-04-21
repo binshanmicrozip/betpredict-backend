@@ -161,29 +161,111 @@ class FeatureVector(models.Model):
 
 class Pattern(models.Model):
     LABEL_CHOICES = [
-        ('UP', 'UP'),
-        ('DOWN', 'DOWN'),
-        ('NEUTRAL', 'NEUTRAL'),
+        ("UP", "UP"),
+        ("DOWN", "DOWN"),
+        ("NEUTRAL", "NEUTRAL"),
     ]
 
-    feature_vector = models.ForeignKey(FeatureVector, on_delete=models.CASCADE, related_name='patterns')
-    runner = models.ForeignKey(Runner, on_delete=models.CASCADE, related_name='patterns')
-    market = models.ForeignKey(Market, on_delete=models.CASCADE, related_name='patterns')
-    window_start = models.DateTimeField()
-    window_end = models.DateTimeField()
+    market = models.ForeignKey(
+        "Market",
+        on_delete=models.CASCADE,
+        related_name="patterns",
+        db_column="market_id",
+    )
+    runner = models.ForeignKey(
+        "Runner",
+        on_delete=models.CASCADE,
+        related_name="patterns",
+        db_column="runner_id",
+    )
+    feature_vector = models.ForeignKey(
+        "FeatureVector",
+        on_delete=models.CASCADE,
+        related_name="patterns",
+        null=True,
+        blank=True,
+    )
+
+    runner_name = models.CharField(max_length=255, blank=True, null=True)
+    event_name = models.CharField(max_length=255, blank=True, null=True)
+    market_time = models.DateTimeField(blank=True, null=True)
+
+    winner = models.CharField(max_length=255, blank=True, null=True)
+    runner_won = models.BooleanField(blank=True, null=True)
+
+    window_start = models.DateTimeField(blank=True, null=True)
+    window_end = models.DateTimeField(blank=True, null=True)
+
+    window_start_ms = models.BigIntegerField(blank=True, null=True)
+    window_end_ms = models.BigIntegerField(blank=True, null=True)
+    window_start_utc = models.DateTimeField(blank=True, null=True)
+
+    price_at_start = models.DecimalField(max_digits=12, decimal_places=4, blank=True, null=True)
+    price_at_end = models.DecimalField(max_digits=12, decimal_places=4, blank=True, null=True)
+    price_high = models.DecimalField(max_digits=12, decimal_places=4, blank=True, null=True)
+    price_low = models.DecimalField(max_digits=12, decimal_places=4, blank=True, null=True)
+
+    price_change_pct = models.DecimalField(max_digits=12, decimal_places=4, blank=True, null=True)
+    momentum = models.DecimalField(max_digits=12, decimal_places=6, blank=True, null=True)
+    volatility = models.DecimalField(max_digits=12, decimal_places=6, blank=True, null=True)
+    trend_slope = models.DecimalField(max_digits=12, decimal_places=6, blank=True, null=True)
+    max_drawdown = models.DecimalField(max_digits=12, decimal_places=6, blank=True, null=True)
+
+    tick_count = models.SmallIntegerField(blank=True, null=True)
+    duration_sec = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+
+    pattern_type = models.CharField(max_length=100, blank=True, null=True)
     label = models.CharField(max_length=10, choices=LABEL_CHOICES)
-    tick_count = models.SmallIntegerField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'patterns'
+        db_table = "patterns"
         indexes = [
-            models.Index(fields=['runner', 'label']),
-            models.Index(fields=['market', 'label']),
+            models.Index(fields=["runner", "label"]),
+            models.Index(fields=["market", "label"]),
+            models.Index(fields=["pattern_type"]),
+            models.Index(fields=["window_start"]),
+            models.Index(fields=["window_end"]),
         ]
 
     def __str__(self):
-        return f"Pattern {self.id} - {self.label}"
+        return f"Pattern {self.id} - {self.label} - {self.runner_name}"
 
+
+class LiveMarketTick(models.Model):
+    market_id = models.CharField(max_length=50)
+    event_id = models.CharField(max_length=50, null=True, blank=True)
+    event_name = models.CharField(max_length=255, null=True, blank=True)
+
+    market_type = models.CharField(max_length=100, null=True, blank=True)
+    market_time = models.DateTimeField(null=True, blank=True)
+
+    runner_id = models.CharField(max_length=50)
+    runner_name = models.CharField(max_length=255, null=True, blank=True)
+
+    publish_time_ms = models.BigIntegerField(null=True, blank=True)
+    publish_time_utc = models.DateTimeField(null=True, blank=True)
+
+    ltp = models.FloatField(null=True, blank=True)
+    prev_ltp = models.FloatField(null=True, blank=True)
+
+    price_change = models.FloatField(null=True, blank=True)
+    price_change_pct = models.FloatField(null=True, blank=True)
+    price_direction = models.CharField(max_length=10, null=True, blank=True)
+
+    market_status = models.CharField(max_length=50, null=True, blank=True)
+    in_play = models.BooleanField(default=False)
+    bet_delay = models.IntegerField(null=True, blank=True)
+
+    winner = models.CharField(max_length=255, null=True, blank=True)
+    settled_time = models.DateTimeField(null=True, blank=True)
+
+    year = models.IntegerField(null=True, blank=True)
+    month = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        db_table = "live_market_ticks"
 
 from decimal import Decimal
 from django.db import models
@@ -196,22 +278,46 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+from django.db import models
+
 
 class Player(models.Model):
-    ROLE_CHOICES = [
-        ("Batsman", "Batsman"),
-        ("Bowler", "Bowler"),
-        ("All-rounder", "All-rounder"),
-        ("Wicketkeeper", "Wicketkeeper"),
-        ("Unknown", "Unknown"),
-    ]
+    player_id = models.CharField(primary_key=True, max_length=50)
+    player_name = models.CharField(max_length=255)
+    normalized_name = models.CharField(max_length=255, db_index=True)
 
-    player_id = models.CharField(max_length=20, primary_key=True)
-    player_name = models.CharField(max_length=255, db_index=True)
-    nationality = models.CharField(max_length=100, blank=True, null=True)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="Unknown")
+    country = models.CharField(max_length=100, blank=True, null=True)
+    role = models.CharField(max_length=100, blank=True, null=True)
+
+    cricbuzz_profile_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    cricbuzz_profile_url = models.URLField(blank=True, null=True)
+
     ipl_debut = models.DateField(blank=True, null=True)
-    last_season = models.PositiveSmallIntegerField(blank=True, null=True)
+    debut_year = models.PositiveIntegerField(blank=True, null=True)
+    last_season = models.PositiveIntegerField(blank=True, null=True)
+
+    # career batting
+    total_matches = models.PositiveIntegerField(default=0)
+    innings = models.PositiveIntegerField(default=0)
+    total_runs = models.PositiveIntegerField(default=0)
+    balls_faced_total = models.PositiveIntegerField(default=0)
+    highscore = models.PositiveIntegerField(default=0)
+    batting_average = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    strike_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    fours = models.PositiveIntegerField(default=0)
+    sixes = models.PositiveIntegerField(default=0)
+    fifties = models.PositiveIntegerField(default=0)
+    hundreds = models.PositiveIntegerField(default=0)
+    not_outs = models.PositiveIntegerField(default=0)
+
+    # career bowling
+    balls_bowled = models.PositiveIntegerField(default=0)
+    wickets = models.PositiveIntegerField(default=0)
+    runs_given = models.PositiveIntegerField(default=0)
+    economy = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    wides = models.PositiveIntegerField(default=0)
+    noballs = models.PositiveIntegerField(default=0)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -219,7 +325,196 @@ class Player(models.Model):
         ordering = ["player_name"]
 
     def __str__(self):
-        return f"{self.player_name} ({self.player_id})"
+        return self.player_name
+
+
+class IPLMatch(models.Model):
+    match_id = models.CharField(primary_key=True, max_length=100)
+    season = models.PositiveIntegerField(db_index=True)
+    match_date = models.DateField(blank=True, null=True)
+    match_number = models.PositiveIntegerField(blank=True, null=True)
+
+    team1 = models.CharField(max_length=255, blank=True, null=True)
+    team2 = models.CharField(max_length=255, blank=True, null=True)
+
+    toss_winner = models.CharField(max_length=255, blank=True, null=True)
+    toss_decision = models.CharField(max_length=50, blank=True, null=True)
+
+    venue = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        db_table = "ipl_matches"
+
+    def __str__(self):
+        return str(self.match_id)
+
+
+class MatchPlayer(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    match = models.ForeignKey(
+        IPLMatch,
+        on_delete=models.CASCADE,
+        related_name="match_players",
+        db_column="match_id",
+    )
+    player = models.ForeignKey(
+        Player,
+        on_delete=models.CASCADE,
+        related_name="match_players",
+        db_column="player_id",
+    )
+
+    class Meta:
+        db_table = "match_players"
+        unique_together = ("match", "player")
+
+
+class Delivery(models.Model):
+    id = models.BigAutoField(primary_key=True)
+
+    match = models.ForeignKey(
+        IPLMatch,
+        on_delete=models.CASCADE,
+        related_name="deliveries",
+        db_column="match_id",
+    )
+
+    innings = models.PositiveSmallIntegerField()
+    over_number = models.PositiveSmallIntegerField()
+    ball_number = models.PositiveSmallIntegerField()
+
+    batter = models.ForeignKey(
+        Player,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="batting_deliveries",
+        db_column="batter_id",
+    )
+    bowler = models.ForeignKey(
+        Player,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="bowling_deliveries",
+        db_column="bowler_id",
+    )
+    non_striker = models.ForeignKey(
+        Player,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="non_striker_deliveries",
+        db_column="non_striker_id",
+    )
+    player_out = models.ForeignKey(
+        Player,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="dismissed_deliveries",
+        db_column="player_out_id",
+    )
+
+    runs_batter = models.PositiveIntegerField(default=0)
+    runs_extras = models.PositiveIntegerField(default=0)
+    runs_total = models.PositiveIntegerField(default=0)
+
+    extra_type = models.CharField(max_length=50, blank=True, null=True)
+    is_wicket = models.BooleanField(default=False)
+    wicket_kind = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        db_table = "deliveries"
+        ordering = ["match_id", "innings", "over_number", "ball_number"]
+
+
+class PlayerMatchBatting(models.Model):
+    id = models.BigAutoField(primary_key=True)
+
+    match = models.ForeignKey(
+        IPLMatch,
+        on_delete=models.CASCADE,
+        related_name="batting_stats",
+        db_column="match_id",
+    )
+    player = models.ForeignKey(
+        Player,
+        on_delete=models.CASCADE,
+        related_name="match_batting_stats",
+        db_column="player_id",
+    )
+
+    innings = models.PositiveSmallIntegerField()
+    runs = models.PositiveIntegerField(default=0)
+    balls_faced = models.PositiveIntegerField(default=0)
+    fours = models.PositiveIntegerField(default=0)
+    sixes = models.PositiveIntegerField(default=0)
+    strike_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    dismissal_kind = models.CharField(max_length=100, blank=True, null=True)
+    is_not_out = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "player_match_batting"
+        unique_together = ("match", "player", "innings")
+
+
+class PlayerMatchBowling(models.Model):
+    id = models.BigAutoField(primary_key=True)
+
+    match = models.ForeignKey(
+        IPLMatch,
+        on_delete=models.CASCADE,
+        related_name="bowling_stats",
+        db_column="match_id",
+    )
+    player = models.ForeignKey(
+        Player,
+        on_delete=models.CASCADE,
+        related_name="match_bowling_stats",
+        db_column="player_id",
+    )
+
+    innings = models.PositiveSmallIntegerField()
+    overs_bowled = models.DecimalField(max_digits=5, decimal_places=1, default=0)
+    balls_bowled_calc = models.PositiveIntegerField(default=0)
+    runs_given = models.PositiveIntegerField(default=0)
+    wickets = models.PositiveIntegerField(default=0)
+    economy = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    wides = models.PositiveIntegerField(default=0)
+    noballs = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "player_match_bowling"
+        unique_together = ("match", "player", "innings")
+
+
+class PlayerSituationStats(models.Model):
+    id = models.BigAutoField(primary_key=True)
+
+    player = models.ForeignKey(
+        Player,
+        on_delete=models.CASCADE,
+        related_name="situation_stats",
+        db_column="player_id",
+    )
+
+    phase = models.CharField(max_length=50)
+    innings_type = models.CharField(max_length=50)
+
+    matches_played = models.PositiveIntegerField(default=0)
+    runs = models.PositiveIntegerField(default=0)
+    balls = models.PositiveIntegerField(default=0)
+    strike_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    boundary_count = models.PositiveIntegerField(default=0)
+    boundary_pct = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    wickets_lost = models.PositiveIntegerField(default=0)
+    dismissal_rate = models.DecimalField(max_digits=10, decimal_places=4, blank=True, null=True)
+
+    class Meta:
+        db_table = "player_situation_stats"
+        unique_together = ("player", "phase", "innings_type")
 
 
 class PlayerIPLTeam(models.Model):
@@ -247,250 +542,6 @@ class PlayerIPLTeam(models.Model):
         return f"{self.player.player_name} - {self.team_short or self.team_name} ({self.season})"
 
 
-class IPLMatch(models.Model):
-    match_id = models.CharField(max_length=100, primary_key=True)
-    season = models.PositiveSmallIntegerField(db_index=True)
-    match_number = models.PositiveIntegerField(blank=True, null=True)
-    match_date = models.DateField(db_index=True)
-    venue = models.CharField(max_length=255, blank=True, null=True)
-    city = models.CharField(max_length=100, blank=True, null=True)
-    team_home = models.CharField(max_length=255, db_index=True)
-    team_away = models.CharField(max_length=255, db_index=True)
-    toss_winner = models.CharField(max_length=255, blank=True, null=True)
-    toss_decision = models.CharField(max_length=20, blank=True, null=True)
-    winner = models.CharField(max_length=255, blank=True, null=True)
-    win_by_runs = models.PositiveIntegerField(blank=True, null=True)
-    win_by_wickets = models.PositiveIntegerField(blank=True, null=True)
-    player_of_match = models.CharField(max_length=255, blank=True, null=True)
-
-    class Meta:
-        db_table = "ipl_matches"
-        ordering = ["-match_date", "match_number"]
-        indexes = [
-            models.Index(fields=["season", "match_date"]),
-            models.Index(fields=["team_home"]),
-            models.Index(fields=["team_away"]),
-        ]
-
-    def __str__(self):
-        return f"{self.match_id} - {self.team_home} vs {self.team_away}"
-
-
-class MatchPlayer(models.Model):
-    match = models.ForeignKey(
-        IPLMatch,
-        on_delete=models.CASCADE,
-        related_name="match_players",
-        db_column="match_id",
-    )
-    player = models.ForeignKey(
-        Player,
-        on_delete=models.CASCADE,
-        related_name="match_appearances",
-        db_column="player_id",
-    )
-    team_name = models.CharField(max_length=255)
-    batting_position = models.PositiveSmallIntegerField(blank=True, null=True)
-
-    class Meta:
-        db_table = "match_players"
-        unique_together = ("match", "player")
-        indexes = [
-            models.Index(fields=["match", "team_name"]),
-            models.Index(fields=["player"]),
-        ]
-
-    def __str__(self):
-        return f"{self.match.match_id} - {self.player.player_name}"
-
-
-class Delivery(models.Model):
-    EXTRA_TYPE_CHOICES = [
-        ("wide", "wide"),
-        ("noball", "noball"),
-        ("legbye", "legbye"),
-        ("bye", "bye"),
-    ]
-
-    delivery_id = models.BigAutoField(primary_key=True)
-    match = models.ForeignKey(
-        IPLMatch,
-        on_delete=models.CASCADE,
-        related_name="deliveries",
-        db_column="match_id",
-    )
-    innings = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(4)]
-    )
-    over_number = models.PositiveSmallIntegerField()
-    ball_number = models.PositiveSmallIntegerField()
-
-    batter = models.ForeignKey(
-        Player,
-        on_delete=models.PROTECT,
-        related_name="balls_faced_records",
-        db_column="batter_id",
-    )
-    bowler = models.ForeignKey(
-        Player,
-        on_delete=models.PROTECT,
-        related_name="balls_bowled_records",
-        db_column="bowler_id",
-    )
-    non_striker = models.ForeignKey(
-        Player,
-        on_delete=models.PROTECT,
-        related_name="non_striker_records",
-        db_column="non_striker_id",
-    )
-
-    runs_batter = models.PositiveSmallIntegerField(default=0)
-    runs_extras = models.PositiveSmallIntegerField(default=0)
-    runs_total = models.PositiveSmallIntegerField(default=0)
-    extra_type = models.CharField(max_length=20, choices=EXTRA_TYPE_CHOICES, blank=True, null=True)
-
-    is_wicket = models.BooleanField(default=False)
-    wicket_kind = models.CharField(max_length=50, blank=True, null=True)
-    player_out = models.ForeignKey(
-        Player,
-        on_delete=models.PROTECT,
-        related_name="dismissal_records",
-        db_column="player_out_id",
-        blank=True,
-        null=True,
-    )
-
-    class Meta:
-        db_table = "deliveries"
-        ordering = ["match", "innings", "over_number", "ball_number", "delivery_id"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["match", "innings", "over_number", "ball_number"],
-                name="unique_delivery_per_ball",
-            )
-        ]
-        indexes = [
-            models.Index(fields=["match", "innings", "over_number", "ball_number"]),
-            models.Index(fields=["batter"]),
-            models.Index(fields=["bowler"]),
-            models.Index(fields=["player_out"]),
-            models.Index(fields=["is_wicket"]),
-        ]
-
-    def __str__(self):
-        return f"{self.match.match_id} {self.innings}.{self.over_number}.{self.ball_number}"
-
-
-class PlayerMatchBatting(models.Model):
-    match = models.ForeignKey(
-        IPLMatch,
-        on_delete=models.CASCADE,
-        related_name="batting_scorecards",
-        db_column="match_id",
-    )
-    player = models.ForeignKey(
-        Player,
-        on_delete=models.CASCADE,
-        related_name="match_batting",
-        db_column="player_id",
-    )
-    innings = models.PositiveSmallIntegerField()
-    runs = models.PositiveIntegerField(default=0)
-    balls_faced = models.PositiveIntegerField(default=0)
-    fours = models.PositiveIntegerField(default=0)
-    sixes = models.PositiveIntegerField(default=0)
-    strike_rate = models.DecimalField(max_digits=7, decimal_places=2, default=0)
-    dismissal_kind = models.CharField(max_length=50, blank=True, null=True)
-    is_not_out = models.BooleanField(default=False)
-    batting_position = models.PositiveSmallIntegerField(blank=True, null=True)
-
-    class Meta:
-        db_table = "player_match_batting"
-        unique_together = ("match", "player", "innings")
-        indexes = [
-            models.Index(fields=["player"]),
-            models.Index(fields=["match"]),
-            models.Index(fields=["innings"]),
-        ]
-
-    def __str__(self):
-        return f"{self.match.match_id} - {self.player.player_name} batting"
-
-
-class PlayerMatchBowling(models.Model):
-    match = models.ForeignKey(
-        IPLMatch,
-        on_delete=models.CASCADE,
-        related_name="bowling_scorecards",
-        db_column="match_id",
-    )
-    player = models.ForeignKey(
-        Player,
-        on_delete=models.CASCADE,
-        related_name="match_bowling",
-        db_column="player_id",
-    )
-    innings = models.PositiveSmallIntegerField()
-    overs_bowled = models.DecimalField(max_digits=4, decimal_places=1, default=0)
-    runs_given = models.PositiveIntegerField(default=0)
-    wickets = models.PositiveIntegerField(default=0)
-    economy = models.DecimalField(max_digits=7, decimal_places=2, default=0)
-    wides = models.PositiveIntegerField(default=0)
-    noballs = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        db_table = "player_match_bowling"
-        unique_together = ("match", "player", "innings")
-        indexes = [
-            models.Index(fields=["player"]),
-            models.Index(fields=["match"]),
-            models.Index(fields=["innings"]),
-        ]
-
-    def __str__(self):
-        return f"{self.match.match_id} - {self.player.player_name} bowling"
-
-
-class PlayerSituationStats(models.Model):
-    PHASE_CHOICES = [
-        ("powerplay", "powerplay"),
-        ("middle", "middle"),
-        ("death", "death"),
-    ]
-
-    INNINGS_TYPE_CHOICES = [
-        ("chasing", "chasing"),
-        ("defending", "defending"),
-    ]
-
-    player = models.ForeignKey(
-        Player,
-        on_delete=models.CASCADE,
-        related_name="situation_stats",
-        db_column="player_id",
-    )
-    phase = models.CharField(max_length=20, choices=PHASE_CHOICES)
-    innings_type = models.CharField(max_length=20, choices=INNINGS_TYPE_CHOICES)
-    matches_played = models.PositiveIntegerField(default=0)
-    runs = models.PositiveIntegerField(default=0)
-    balls = models.PositiveIntegerField(default=0)
-    strike_rate = models.DecimalField(max_digits=7, decimal_places=2, default=0)
-    boundary_count = models.PositiveIntegerField(default=0)
-    boundary_pct = models.DecimalField(max_digits=7, decimal_places=2, default=0)
-    wickets_lost = models.PositiveIntegerField(default=0)
-    dismissal_rate = models.DecimalField(max_digits=10, decimal_places=4, default=0)
-
-    class Meta:
-        db_table = "player_situation_stats"
-        unique_together = ("player", "phase", "innings_type")
-        indexes = [
-            models.Index(fields=["player"]),
-            models.Index(fields=["phase"]),
-            models.Index(fields=["innings_type"]),
-        ]
-
-    def __str__(self):
-        return f"{self.player.player_name} - {self.phase} - {self.innings_type}"
 
 
 class LiveMatchState(models.Model):
@@ -552,6 +603,47 @@ class LiveMatchState(models.Model):
 
     def __str__(self):
         return f"{self.match.match_id} live {self.score}/{self.wickets} ({self.overs})"
+
+
+class Signal(models.Model):
+    id = models.BigAutoField(primary_key=True)
+
+    match = models.ForeignKey(
+        IPLMatch,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="signals",
+        db_column="match_id",
+    )
+
+    market_id = models.CharField(max_length=100, db_index=True)
+    runner_id = models.CharField(max_length=100, db_index=True)
+
+    striker_name = models.CharField(max_length=255, blank=True, null=True)
+    phase = models.CharField(max_length=50, blank=True, null=True)
+    innings_type = models.CharField(max_length=50, blank=True, null=True)
+
+    final_probability = models.DecimalField(max_digits=10, decimal_places=4, blank=True, null=True)
+    signal = models.CharField(max_length=20)   # BACK / LAY / WAIT
+    model_source = models.CharField(max_length=100, default="betpredict_model.pkl")
+
+    raw_features = models.JSONField(default=dict, blank=True)
+    raw_output = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "signals"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["market_id"]),
+            models.Index(fields=["runner_id"]),
+            models.Index(fields=["created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.market_id} - {self.runner_id} - {self.signal}"
 
 
 class LiveDelivery(models.Model):

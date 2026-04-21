@@ -1,0 +1,194 @@
+{
+  "_meta": {
+    "generated_at": "2026-04-18T12:32:48.402092",
+    "total_rows": 57757,
+    "total_matches": 348,
+    "total_patterns": 22
+  },
+  "library": {
+    "WICKET_PATTERNS": {
+      "label": "Wicket Patterns",
+      "color": "red",
+      "patterns": {
+        "TAIL_EXPOSED": {
+          "description": "7+ wickets gone in death overs",
+          "price_direction": "UP",
+          "avg_price_move": 10.019,
+          "accuracy": 57,
+          "sample_count": 2362
+        },
+        "MIDDLE_COLLAPSE": {
+          "description": "3+ wickets in overs 7 to 14",
+          "price_direction": "UP",
+          "avg_price_move": 0.0,
+          "accuracy": 50,
+          "sample_count": 1
+        },
+        "WICKET_COLLAPSE": {
+          "description": "3+ wickets in last 3 overs",
+          "price_direction": "UP",
+          "avg_price_move": 0.0,
+          "accuracy": 50,
+          "sample_count": 8
+        },
+        "POWERPLAY_WICKET": {
+          "description": "Wicket falls in first 6 overs",
+          "price_direction": "UP",
+          "avg_price_move": 0.038,
+          "accuracy": 54,
+          "sample_count": 725
+        },
+        "WICKET_SPIKE": {
+          "description": "Wicket falls on last ball",
+          "price_direction": "UP",
+          "avg_price_move": 1.305,
+          "accuracy": 55,
+          "sample_count": 2254
+        }
+      }
+    },
+    "BATTING_PATTERNS": {
+      "label": "Batting Patterns",
+      "color": "green",
+      "patterns": {
+        "SIX_STORM": {
+          "description": "Six hit on last ball",
+          "price_direction": "DOWN",
+          "avg_price_move": 0.626,
+          "accuracy": 52,
+          "sample_count": 3873
+        },
+        "BOUNDARY_BURST": {
+          "description": "3+ boundaries in last 6 balls",
+          "price_direction": "DOWN",
+          "avg_price_move": 1.115,
+          "accuracy": 52,
+          "sample_count": 3459
+        },
+        "POWERPLAY_SURGE": {
+          "description": "3+ boundaries in powerplay",
+          "price_direction": "DOWN",
+          "avg_price_move": -0.006,
+          "accuracy": 54,
+          "sample_count": 6507
+        },
+        "DEATH_REVIVAL": {
+          "description": "Over 15+, wickets gone but still scoring",
+          "price_direction": "DOWN",
+          "avg_price_move": 5.35,
+          "accuracy": 47,
+          "sample_count": 2466
+        },
+        "DEATH_SLOG": {
+          "description": "Over 15+, high batting momentum",
+          "price_direction": "DOWN",
+          "avg_price_move": 0.1,
+          "accuracy": 51,
+          "sample_count": 1307
+        },
+        "BATTING_SURGE": {
+          "description": "15+ runs in last 3 overs",
+          "price_direction": "DOWN",
+          "avg_price_move": 0.273,
+          "accuracy": 56,
+          "sample_count": 215
+        }
+      }
+    },
+    "PRESSURE_PATTERNS": {
+      "label": "Pressure Patterns",
+      "color": "amber",
+      "patterns": {
+        "CHASE_CRISIS": {
+          "description": "Required rate 2+ above current rate",
+          "price_direction": "UP",
+          "avg_price_move": 2.875,
+          "accuracy": 57,
+          "sample_count": 13158
+        },
+        "RUN_RATE_DANGER": {
+          "description": "Required rate above 12 in middle overs",
+          "price_direction": "UP",
+          "avg_price_move": 0.994,
+          "accuracy": 53,
+          "sample_count": 3072
+        },
+        "DOT_BALL_TRAP": {
+          "description": "5+ dot balls in last 6",
+          "price_direction": "UP",
+          "avg_price_move": 1.489,
+          "accuracy": 57,
+          "sample_count": 2516
+        },
+        "PRESSURE_BUILD": {
+          "description": "4+ dot balls in last 6",
+          "price_direction": "UP",
+          "avg_price_move": 0.775,
+          "accuracy": 53,
+          "sample_count": 6343
+        },
+        "CHASE_CONTROLLED": {
+          "description": "Current rate well above required rate",
+          "price_direction": "DOWN",
+          "avg_price_move": -0.014,
+          "accuracy": 60,
+          "sample_count": 3870
+        }
+      }
+    },
+    "PRICE_PATTERNS": {
+      "label": "Price Patterns",
+      "color": "purple",
+      "patterns": {
+        "FAVOURITE_DRIFT": {
+          "description": "Price rising above 2.5 from favourite",
+          "price_direction": "UP",
+          "avg_price_move": 8.466,
+          "accuracy": 53,
+          "sample_count": 7465
+        },
+        "UNDERDOG_SURGE": {
+          "description": "Price dropping fast from high value",
+          "price_direction": "DOWN",
+          "avg_price_move": -0.139,
+          "accuracy": 51,
+          "sample_count": 3881
+        },
+        "PRICE_STABILIZE": {
+          "description": "Price stable with high volume",
+          "price_direction": "NEUTRAL",
+          "avg_price_move": 0.001,
+          "accuracy": 50,
+          "sample_count": 33276
+        }
+      }
+    },
+    "PHASE_PATTERNS": {
+      "label": "Phase Patterns",
+      "color": "blue",
+      "patterns": {
+        "DEATH_CARNAGE": {
+          "description": "Over 17+, 15+ runs in last 2 overs",
+          "price_direction": "DOWN",
+          "avg_price_move": 3.152,
+          "accuracy": 48,
+          "sample_count": 1231
+        },
+        "POWERPLAY_DOMINANT": {
+          "description": "50+ runs in powerplay, 0 or 1 wicket",
+          "price_direction": "DOWN",
+          "avg_price_move": -0.03,
+          "accuracy": 54,
+          "sample_count": 1332
+        },
+        "MIDDLE_GRIND": {
+          "description": "Low scoring middle overs, 2 to 4 wickets",
+          "price_direction": "UP",
+          "avg_price_move": 0.067,
+          "accuracy": 51,
+          "sample_count": 16278
+        }
+      }
+    }
+  }
+}

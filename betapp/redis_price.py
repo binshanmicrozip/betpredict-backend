@@ -10,26 +10,51 @@ r = redis.Redis(
 )
 
 
-def get_latest_price(market_id, runner_id):
-    key = f"price:{market_id}:{runner_id}"
+def make_price_key(market_id, runner_id):
+    return f"price:{market_id}:{runner_id}"
+
+
+def get_latest_price(market_id: str, runner_id: str) -> dict:
+    key = make_price_key(market_id, runner_id)
     data = r.hgetall(key)
 
-    # print(f"[RedisPrice] Reading key={key}")
-    # print(f"[RedisPrice] data={data}")
+    print(f"[RedisPrice] LOOKUP key={key}")
+    print(f"[RedisPrice] DATA={data}")
 
     if not data:
-        return {
-            "market_id": str(market_id),
-            "runner_id": str(runner_id),
-            "ltp": 2.0,
-            "prev_ltp": 2.0,
-            "tv": 0,
-        }
+        return {}
 
     return {
         "market_id": data.get("market_id"),
         "runner_id": data.get("runner_id"),
-        "ltp": float(data.get("ltp", 2.0) or 2.0),
-        "prev_ltp": float(data.get("prev_ltp", data.get("ltp", 2.0)) or 2.0),
-        "tv": float(data.get("tv", 0) or 0),
+        "ltp": float(data.get("ltp")) if data.get("ltp") not in [None, ""] else None,
+        "prev_ltp": float(data.get("prev_ltp")) if data.get("prev_ltp") not in [None, ""] else None,
+        "tv": float(data.get("tv")) if data.get("tv") not in [None, ""] else 0.0,
+        "mi": data.get("mi"),
+        "bmi": data.get("bmi"),
+        "source": data.get("source"),
     }
+
+
+def get_all_market_prices(market_id: str) -> list[dict]:
+    pattern = f"price:{market_id}:*"
+    keys = r.keys(pattern)
+
+    results = []
+    for key in keys:
+        data = r.hgetall(key)
+        if not data:
+            continue
+
+        results.append({
+            "market_id": data.get("market_id"),
+            "runner_id": data.get("runner_id"),
+            "ltp": float(data.get("ltp")) if data.get("ltp") not in [None, ""] else None,
+            "prev_ltp": float(data.get("prev_ltp")) if data.get("prev_ltp") not in [None, ""] else None,
+            "tv": float(data.get("tv")) if data.get("tv") not in [None, ""] else 0.0,
+            "mi": data.get("mi"),
+            "bmi": data.get("bmi"),
+            "source": data.get("source"),
+        })
+
+    return results

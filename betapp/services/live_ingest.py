@@ -86,27 +86,16 @@ def build_event_key(source_match_id, innings, over_number, ball_number, commenta
 
 @transaction.atomic
 def save_live_snapshot(match_id, source_match_id, parsed_data, raw_json):
-    match, _ = IPLMatch.objects.get_or_create(
-        match_id=str(match_id),
-        defaults={
-            "season": 2026,
-            "match_number": None,
-            "match_date": "2026-04-14",
-            "venue": "Unknown",
-            "city": "Unknown",
-            "team_home": parsed_data.get("batting_team") or "Unknown",
-            "team_away": parsed_data.get("bowling_team") or "Unknown",
-            "toss_winner": None,
-            "toss_decision": None,
-            "winner": None,
-            "win_by_runs": None,
-            "win_by_wickets": None,
-            "player_of_match": None,
-        },
-    )
+    match = IPLMatch.objects.get(match_id=match_id)
 
-    total_runs, wickets = parse_score_text(parsed_data.get("score"))
-    toss_winner, toss_decision = extract_toss_values(parsed_data.get("toss"))
+    # update match master fields safely
+    match.team1 = parsed_data.get("team1")
+    match.team2 = parsed_data.get("team2")
+    match.toss_winner = parsed_data.get("toss_winner")
+    match.toss_decision = parsed_data.get("toss_decision")
+    match.venue = parsed_data.get("venue")
+    match.status = parsed_data.get("status")
+    match.save()
 
     live_state, _ = LiveMatchState.objects.update_or_create(
         match=match,
@@ -115,33 +104,18 @@ def save_live_snapshot(match_id, source_match_id, parsed_data, raw_json):
             "source": "cricbuzz",
             "status": parsed_data.get("status"),
             "state": parsed_data.get("state"),
-            "innings": safe_int(parsed_data.get("innings"), None) if parsed_data.get("innings") not in ("", None) else None,
+            "innings": parsed_data.get("innings"),
             "batting_team": parsed_data.get("batting_team"),
             "bowling_team": parsed_data.get("bowling_team"),
-            "score": total_runs,
-            "wickets": wickets,
-            "overs": safe_decimal(parsed_data.get("overs"), "0"),
-            "current_run_rate": safe_decimal(parsed_data.get("crr"), "0") if parsed_data.get("crr") not in ("", None) else None,
-            "required_run_rate": safe_decimal(parsed_data.get("rrr"), "0") if parsed_data.get("rrr") not in ("", None) else None,
-            "target": safe_int(parsed_data.get("target"), None) if parsed_data.get("target") not in ("", None) else None,
-            "toss_winner": toss_winner,
-            "toss_decision": toss_decision,
-            "partnership_runs": safe_int(parsed_data.get("p_runs"), 0),
-            "partnership_balls": safe_int(parsed_data.get("p_balls"), 0),
-            "recent_overs": parsed_data.get("recent"),
-            "last5_overs_runs": safe_int(parsed_data.get("last5_runs"), None) if parsed_data.get("last5_runs") not in ("", None) else None,
-            "last5_overs_wickets": safe_int(parsed_data.get("last5_wkts"), None) if parsed_data.get("last5_wkts") not in ("", None) else None,
-            "last3_overs_runs": safe_int(parsed_data.get("last3_runs"), None) if parsed_data.get("last3_runs") not in ("", None) else None,
-            "powerplay_runs": safe_int(parsed_data.get("pp_runs"), None) if parsed_data.get("pp_runs") not in ("", None) else None,
-            "powerplay_from": safe_decimal(parsed_data.get("pp_from"), "0") if parsed_data.get("pp_from") not in ("", None) else None,
-            "powerplay_to": safe_decimal(parsed_data.get("pp_to"), "0") if parsed_data.get("pp_to") not in ("", None) else None,
-            "latest_ball_text": parsed_data.get("latest_ball"),
+            "score": parsed_data.get("score") or 0,
+            "wickets": parsed_data.get("wickets") or 0,
+            "overs": parsed_data.get("overs") or 0,
+            "target": parsed_data.get("target"),
+            "crr": parsed_data.get("crr"),
+            "rrr": parsed_data.get("rrr"),
             "raw_json": raw_json,
         },
     )
-
-    # update main IPLMatch table from live data
-    update_ipl_match_from_live(match, parsed_data, toss_winner, toss_decision)
 
     return live_state
 

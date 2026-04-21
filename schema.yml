@@ -1,0 +1,5846 @@
+openapi: 3.0.3
+info:
+  title: BetPredict API
+  version: 1.0.0
+  description: API documentation for BetPredict backend
+paths:
+  /api/deliveries/:
+    get:
+      operationId: deliveries_list
+      parameters:
+      - in: query
+        name: ball_number
+        schema:
+          type: integer
+      - in: query
+        name: batter
+        schema:
+          type: string
+      - in: query
+        name: bowler
+        schema:
+          type: string
+      - in: query
+        name: extra_type
+        schema:
+          type: string
+      - in: query
+        name: innings
+        schema:
+          type: integer
+      - in: query
+        name: is_wicket
+        schema:
+          type: boolean
+      - in: query
+        name: match
+        schema:
+          type: string
+      - in: query
+        name: match_id
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: over_number
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: player_out
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDeliveryList'
+          description: ''
+    post:
+      operationId: deliveries_create
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeliveryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeliveryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeliveryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+          description: ''
+  /api/deliveries/{id}/:
+    get:
+      operationId: deliveries_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this delivery.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+          description: ''
+    put:
+      operationId: deliveries_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this delivery.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeliveryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeliveryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeliveryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+          description: ''
+    patch:
+      operationId: deliveries_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this delivery.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDeliveryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDeliveryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDeliveryRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+          description: ''
+    delete:
+      operationId: deliveries_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this delivery.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/ipl-matches/:
+    get:
+      operationId: ipl_matches_list
+      parameters:
+      - in: query
+        name: match_date
+        schema:
+          type: string
+          format: date
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: season
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+      - in: query
+        name: team1
+        schema:
+          type: string
+      - in: query
+        name: team2
+        schema:
+          type: string
+      - in: query
+        name: toss_decision
+        schema:
+          type: string
+      - in: query
+        name: toss_winner
+        schema:
+          type: string
+      - in: query
+        name: venue
+        schema:
+          type: string
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedIPLMatchList'
+          description: ''
+    post:
+      operationId: ipl_matches_create
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IPLMatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IPLMatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IPLMatchRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IPLMatch'
+          description: ''
+  /api/ipl-matches/{match_id}/:
+    get:
+      operationId: ipl_matches_retrieve
+      parameters:
+      - in: path
+        name: match_id
+        schema:
+          type: string
+        description: A unique value identifying this ipl match.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IPLMatch'
+          description: ''
+    put:
+      operationId: ipl_matches_update
+      parameters:
+      - in: path
+        name: match_id
+        schema:
+          type: string
+        description: A unique value identifying this ipl match.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IPLMatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IPLMatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IPLMatchRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IPLMatch'
+          description: ''
+    patch:
+      operationId: ipl_matches_partial_update
+      parameters:
+      - in: path
+        name: match_id
+        schema:
+          type: string
+        description: A unique value identifying this ipl match.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedIPLMatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedIPLMatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedIPLMatchRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IPLMatch'
+          description: ''
+    delete:
+      operationId: ipl_matches_destroy
+      parameters:
+      - in: path
+        name: match_id
+        schema:
+          type: string
+        description: A unique value identifying this ipl match.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/latest-prediction/:
+    get:
+      operationId: latest_prediction_retrieve
+      summary: Get latest prediction
+      tags:
+      - Predictions
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/live-deliveries/:
+    get:
+      operationId: live_deliveries_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - live-deliveries
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLiveDeliveryList'
+          description: ''
+  /api/live-deliveries/{live_delivery_id}/:
+    get:
+      operationId: live_deliveries_retrieve
+      parameters:
+      - in: path
+        name: live_delivery_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this live delivery.
+        required: true
+      tags:
+      - live-deliveries
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveDelivery'
+          description: ''
+  /api/live-deliveries/latest/:
+    get:
+      operationId: live_deliveries_latest_retrieve
+      tags:
+      - live-deliveries
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveDelivery'
+          description: ''
+  /api/live-match-states/:
+    get:
+      operationId: live_match_states_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - live-match-states
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLiveMatchStateList'
+          description: ''
+  /api/live-match-states/{live_id}/:
+    get:
+      operationId: live_match_states_retrieve
+      parameters:
+      - in: path
+        name: live_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this live match state.
+        required: true
+      tags:
+      - live-match-states
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveMatchState'
+          description: ''
+  /api/live-match-states/latest/:
+    get:
+      operationId: live_match_states_latest_retrieve
+      tags:
+      - live-match-states
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveMatchState'
+          description: ''
+  /api/login/:
+    post:
+      operationId: login_create
+      description: Login with username and password and receive JWT access and refresh
+        tokens.
+      tags:
+      - login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              LoginRequest:
+                value:
+                  username: admin
+                  password: admin123
+                summary: Login Request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                LoginSuccessResponse:
+                  value:
+                    success: true
+                    message: Login successful
+                    data:
+                      user_id: 1
+                      username: admin
+                      email: admin@example.com
+                      is_staff: true
+                      access: your_access_token
+                      refresh: your_refresh_token
+                  summary: Login Success Response
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/markets/:
+    get:
+      operationId: markets_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Markets
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMarketList'
+          description: ''
+    post:
+      operationId: markets_create
+      tags:
+      - Markets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarketRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MarketRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MarketRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Market'
+          description: ''
+  /api/markets/{market_id}/:
+    get:
+      operationId: markets_retrieve
+      parameters:
+      - in: path
+        name: market_id
+        schema:
+          type: string
+        description: A unique value identifying this market.
+        required: true
+      tags:
+      - Markets
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Market'
+          description: ''
+    put:
+      operationId: markets_update
+      parameters:
+      - in: path
+        name: market_id
+        schema:
+          type: string
+        description: A unique value identifying this market.
+        required: true
+      tags:
+      - Markets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarketRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MarketRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MarketRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Market'
+          description: ''
+    patch:
+      operationId: markets_partial_update
+      parameters:
+      - in: path
+        name: market_id
+        schema:
+          type: string
+        description: A unique value identifying this market.
+        required: true
+      tags:
+      - Markets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMarketRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMarketRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMarketRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Market'
+          description: ''
+    delete:
+      operationId: markets_destroy
+      parameters:
+      - in: path
+        name: market_id
+        schema:
+          type: string
+        description: A unique value identifying this market.
+        required: true
+      tags:
+      - Markets
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/match-players/:
+    get:
+      operationId: match_players_list
+      parameters:
+      - in: query
+        name: match
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: player
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMatchPlayerList'
+          description: ''
+    post:
+      operationId: match_players_create
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchPlayerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchPlayerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchPlayerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPlayer'
+          description: ''
+  /api/match-players/{id}/:
+    get:
+      operationId: match_players_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this match player.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPlayer'
+          description: ''
+    put:
+      operationId: match_players_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this match player.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchPlayerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MatchPlayerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MatchPlayerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPlayer'
+          description: ''
+    patch:
+      operationId: match_players_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this match player.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchPlayerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchPlayerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMatchPlayerRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPlayer'
+          description: ''
+    delete:
+      operationId: match_players_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this match player.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/patterns/:
+    get:
+      operationId: patterns_retrieve
+      summary: Get all patterns or patterns by category
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: Filter patterns by category
+      tags:
+      - Patterns
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    post:
+      operationId: patterns_create
+      tags:
+      - Patterns
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatternRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatternRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatternRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pattern'
+          description: ''
+  /api/patterns/{id}/:
+    get:
+      operationId: patterns_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pattern.
+        required: true
+      tags:
+      - Patterns
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pattern'
+          description: ''
+    put:
+      operationId: patterns_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pattern.
+        required: true
+      tags:
+      - Patterns
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatternRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatternRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatternRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pattern'
+          description: ''
+    patch:
+      operationId: patterns_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pattern.
+        required: true
+      tags:
+      - Patterns
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPatternRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPatternRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPatternRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pattern'
+          description: ''
+    delete:
+      operationId: patterns_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pattern.
+        required: true
+      tags:
+      - Patterns
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/patterns/detail/:
+    get:
+      operationId: patterns_detail_retrieve
+      summary: Get pattern details by name
+      parameters:
+      - in: query
+        name: pattern
+        schema:
+          type: string
+        description: Pattern name
+        required: true
+      tags:
+      - Patterns
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/player-ipl-teams/:
+    get:
+      operationId: player_ipl_teams_list
+      parameters:
+      - in: query
+        name: is_current
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: player
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: season
+        schema:
+          type: integer
+      - in: query
+        name: team_name
+        schema:
+          type: string
+      - in: query
+        name: team_short
+        schema:
+          type: string
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPlayerIPLTeamList'
+          description: ''
+    post:
+      operationId: player_ipl_teams_create
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerIPLTeamRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerIPLTeamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerIPLTeamRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerIPLTeam'
+          description: ''
+  /api/player-ipl-teams/{id}/:
+    get:
+      operationId: player_ipl_teams_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player ipl team.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerIPLTeam'
+          description: ''
+    put:
+      operationId: player_ipl_teams_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player ipl team.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerIPLTeamRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerIPLTeamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerIPLTeamRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerIPLTeam'
+          description: ''
+    patch:
+      operationId: player_ipl_teams_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player ipl team.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerIPLTeamRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerIPLTeamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerIPLTeamRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerIPLTeam'
+          description: ''
+    delete:
+      operationId: player_ipl_teams_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player ipl team.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/player-match-batting/:
+    get:
+      operationId: player_match_batting_list
+      parameters:
+      - in: query
+        name: dismissal_kind
+        schema:
+          type: string
+      - in: query
+        name: innings
+        schema:
+          type: integer
+      - in: query
+        name: is_not_out
+        schema:
+          type: boolean
+      - in: query
+        name: match
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: player
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPlayerMatchBattingList'
+          description: ''
+    post:
+      operationId: player_match_batting_create
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerMatchBattingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerMatchBattingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerMatchBattingRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerMatchBatting'
+          description: ''
+  /api/player-match-batting/{id}/:
+    get:
+      operationId: player_match_batting_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player match batting.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerMatchBatting'
+          description: ''
+    put:
+      operationId: player_match_batting_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player match batting.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerMatchBattingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerMatchBattingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerMatchBattingRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerMatchBatting'
+          description: ''
+    patch:
+      operationId: player_match_batting_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player match batting.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerMatchBattingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerMatchBattingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerMatchBattingRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerMatchBatting'
+          description: ''
+    delete:
+      operationId: player_match_batting_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player match batting.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/player-match-bowling/:
+    get:
+      operationId: player_match_bowling_list
+      parameters:
+      - in: query
+        name: innings
+        schema:
+          type: integer
+      - in: query
+        name: match
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: player
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPlayerMatchBowlingList'
+          description: ''
+    post:
+      operationId: player_match_bowling_create
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerMatchBowlingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerMatchBowlingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerMatchBowlingRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerMatchBowling'
+          description: ''
+  /api/player-match-bowling/{id}/:
+    get:
+      operationId: player_match_bowling_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player match bowling.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerMatchBowling'
+          description: ''
+    put:
+      operationId: player_match_bowling_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player match bowling.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerMatchBowlingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerMatchBowlingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerMatchBowlingRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerMatchBowling'
+          description: ''
+    patch:
+      operationId: player_match_bowling_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player match bowling.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerMatchBowlingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerMatchBowlingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerMatchBowlingRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerMatchBowling'
+          description: ''
+    delete:
+      operationId: player_match_bowling_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player match bowling.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/player-situation-stats/:
+    get:
+      operationId: player_situation_stats_list
+      parameters:
+      - in: query
+        name: innings_type
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: phase
+        schema:
+          type: string
+      - in: query
+        name: player
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPlayerSituationStatsList'
+          description: ''
+    post:
+      operationId: player_situation_stats_create
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerSituationStatsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerSituationStatsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerSituationStatsRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerSituationStats'
+          description: ''
+  /api/player-situation-stats/{id}/:
+    get:
+      operationId: player_situation_stats_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player situation stats.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerSituationStats'
+          description: ''
+    put:
+      operationId: player_situation_stats_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player situation stats.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerSituationStatsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerSituationStatsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerSituationStatsRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerSituationStats'
+          description: ''
+    patch:
+      operationId: player_situation_stats_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player situation stats.
+        required: true
+      tags:
+      - Players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerSituationStatsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerSituationStatsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerSituationStatsRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerSituationStats'
+          description: ''
+    delete:
+      operationId: player_situation_stats_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this player situation stats.
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/player-stats/:
+    get:
+      operationId: player_stats_retrieve
+      summary: Get player stats
+      parameters:
+      - in: query
+        name: player_name
+        schema:
+          type: string
+        description: Player name
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/players/:
+    get:
+      operationId: players_list
+      summary: List all players
+      parameters:
+      - in: query
+        name: country
+        schema:
+          type: string
+      - in: query
+        name: debut_year
+        schema:
+          type: integer
+      - in: query
+        name: last_season
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: role
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPlayerList'
+          description: ''
+    post:
+      operationId: players_create
+      tags:
+      - players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+          description: ''
+  /api/players/{player_id}/:
+    get:
+      operationId: players_retrieve
+      summary: Retrieve player by player_id
+      parameters:
+      - in: path
+        name: player_id
+        schema:
+          type: string
+        description: 'Player ID string. Example: 1c2a64cd or viratkohli_88733497'
+        required: true
+      tags:
+      - players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+          description: ''
+    put:
+      operationId: players_update
+      parameters:
+      - in: path
+        name: player_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PlayerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PlayerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+          description: ''
+    patch:
+      operationId: players_partial_update
+      parameters:
+      - in: path
+        name: player_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlayerRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+          description: ''
+    delete:
+      operationId: players_destroy
+      parameters:
+      - in: path
+        name: player_id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/players/by-player/{player_id}/:
+    get:
+      operationId: players_by_player_retrieve
+      parameters:
+      - in: path
+        name: player_id
+        schema:
+          type: string
+        description: Player id, for example 1c2a64cd
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+          description: ''
+  /api/players/ipl-2026/:
+    get:
+      operationId: players_ipl_2026_list
+      parameters:
+      - in: query
+        name: country
+        schema:
+          type: string
+      - in: query
+        name: debut_year
+        schema:
+          type: integer
+      - in: query
+        name: last_season
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: role
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedIPL2026PlayerListList'
+          description: ''
+  /api/players/profile/{player_id}/:
+    get:
+      operationId: players_profile_retrieve
+      parameters:
+      - in: path
+        name: player_id
+        schema:
+          type: string
+        description: Player id
+        required: true
+      tags:
+      - Players
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerProfile'
+          description: ''
+  /api/predict/:
+    post:
+      operationId: predict_create
+      summary: Generate prediction signal
+      tags:
+      - Predictions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/price-ticks/:
+    get:
+      operationId: price_ticks_list
+      parameters:
+      - in: query
+        name: day
+        schema:
+          type: integer
+      - in: query
+        name: market__market_id
+        schema:
+          type: string
+      - in: query
+        name: month
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: phase
+        schema:
+          type: string
+      - in: query
+        name: runner__selection_id
+        schema:
+          type: integer
+      - in: query
+        name: runner_id
+        schema:
+          type: integer
+      - in: query
+        name: snapshot
+        schema:
+          type: string
+      - in: query
+        name: year
+        schema:
+          type: integer
+      tags:
+      - Price Ticks
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPriceTickList'
+          description: ''
+    post:
+      operationId: price_ticks_create
+      tags:
+      - Price Ticks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceTickRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PriceTickRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PriceTickRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceTick'
+          description: ''
+  /api/price-ticks/{id}/:
+    get:
+      operationId: price_ticks_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this price tick.
+        required: true
+      tags:
+      - Price Ticks
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceTick'
+          description: ''
+    put:
+      operationId: price_ticks_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this price tick.
+        required: true
+      tags:
+      - Price Ticks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceTickRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PriceTickRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PriceTickRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceTick'
+          description: ''
+    patch:
+      operationId: price_ticks_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this price tick.
+        required: true
+      tags:
+      - Price Ticks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPriceTickRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPriceTickRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPriceTickRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceTick'
+          description: ''
+    delete:
+      operationId: price_ticks_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this price tick.
+        required: true
+      tags:
+      - Price Ticks
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/price-ticks/by-week/:
+    get:
+      operationId: price_ticks_by_week_retrieve
+      tags:
+      - price-ticks
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceTick'
+          description: ''
+  /api/price-ticks/ingest/:
+    post:
+      operationId: price_ticks_ingest_create
+      summary: Ingest batch of price ticks
+      tags:
+      - Price Ticks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+              description: Unspecified request body
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+              description: Unspecified request body
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+              description: Unspecified request body
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/price-ticks/latest/:
+    get:
+      operationId: price_ticks_latest_retrieve
+      tags:
+      - price-ticks
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceTick'
+          description: ''
+  /api/runners/:
+    get:
+      operationId: runners_list
+      parameters:
+      - in: query
+        name: final_result
+        schema:
+          type: string
+      - in: query
+        name: market__country_code
+        schema:
+          type: string
+      - in: query
+        name: market__event_id
+        schema:
+          type: string
+      - in: query
+        name: market__event_type_id
+        schema:
+          type: string
+      - in: query
+        name: market__market_id
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: selection_id
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+      tags:
+      - Runners
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRunnerList'
+          description: ''
+    post:
+      operationId: runners_create
+      tags:
+      - Runners
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunnerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RunnerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RunnerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Runner'
+          description: ''
+  /api/runners/{id}/:
+    get:
+      operationId: runners_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this runner.
+        required: true
+      tags:
+      - Runners
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Runner'
+          description: ''
+    put:
+      operationId: runners_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this runner.
+        required: true
+      tags:
+      - Runners
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunnerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RunnerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RunnerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Runner'
+          description: ''
+    patch:
+      operationId: runners_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this runner.
+        required: true
+      tags:
+      - Runners
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRunnerRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRunnerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRunnerRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Runner'
+          description: ''
+    delete:
+      operationId: runners_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this runner.
+        required: true
+      tags:
+      - Runners
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/token/refresh/:
+    post:
+      operationId: token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+components:
+  schemas:
+    BlankEnum:
+      enum:
+      - ''
+    Delivery:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        match_date:
+          type: string
+          format: date
+          readOnly: true
+        batter_name:
+          type: string
+          readOnly: true
+        bowler_name:
+          type: string
+          readOnly: true
+        non_striker_name:
+          type: string
+          readOnly: true
+        player_out_name:
+          type: string
+          readOnly: true
+        innings:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        over_number:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        ball_number:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        runs_batter:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        runs_extras:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        runs_total:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        extra_type:
+          type: string
+          nullable: true
+          maxLength: 50
+        is_wicket:
+          type: boolean
+        wicket_kind:
+          type: string
+          nullable: true
+          maxLength: 100
+        match:
+          type: string
+        batter:
+          type: string
+          nullable: true
+        bowler:
+          type: string
+          nullable: true
+        non_striker:
+          type: string
+          nullable: true
+        player_out:
+          type: string
+          nullable: true
+      required:
+      - ball_number
+      - batter_name
+      - bowler_name
+      - id
+      - innings
+      - match
+      - match_date
+      - non_striker_name
+      - over_number
+      - player_out_name
+    DeliveryRequest:
+      type: object
+      properties:
+        innings:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        over_number:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        ball_number:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        runs_batter:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        runs_extras:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        runs_total:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        extra_type:
+          type: string
+          nullable: true
+          maxLength: 50
+        is_wicket:
+          type: boolean
+        wicket_kind:
+          type: string
+          nullable: true
+          maxLength: 100
+        match:
+          type: string
+          minLength: 1
+        batter:
+          type: string
+          minLength: 1
+          nullable: true
+        bowler:
+          type: string
+          minLength: 1
+          nullable: true
+        non_striker:
+          type: string
+          minLength: 1
+          nullable: true
+        player_out:
+          type: string
+          minLength: 1
+          nullable: true
+      required:
+      - ball_number
+      - innings
+      - match
+      - over_number
+    ExtraTypeEnum:
+      enum:
+      - wide
+      - noball
+      - legbye
+      - bye
+      type: string
+      description: |-
+        * `wide` - wide
+        * `noball` - noball
+        * `legbye` - legbye
+        * `bye` - bye
+    IPL2026PlayerList:
+      type: object
+      properties:
+        player_id:
+          type: string
+        player_name:
+          type: string
+        role:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        current_team:
+          type: string
+          nullable: true
+        matches_played:
+          type: integer
+        ipl_debut:
+          type: string
+          format: date
+          nullable: true
+        last_season:
+          type: integer
+          nullable: true
+      required:
+      - country
+      - current_team
+      - ipl_debut
+      - last_season
+      - matches_played
+      - player_id
+      - player_name
+      - role
+    IPLMatch:
+      type: object
+      properties:
+        match_id:
+          type: string
+          maxLength: 100
+        season:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        match_date:
+          type: string
+          format: date
+          nullable: true
+        match_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        team1:
+          type: string
+          nullable: true
+          maxLength: 255
+        team2:
+          type: string
+          nullable: true
+          maxLength: 255
+        toss_winner:
+          type: string
+          nullable: true
+          maxLength: 255
+        toss_decision:
+          type: string
+          nullable: true
+          maxLength: 50
+        venue:
+          type: string
+          nullable: true
+          maxLength: 255
+        status:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - match_id
+      - season
+    IPLMatchRequest:
+      type: object
+      properties:
+        match_id:
+          type: string
+          minLength: 1
+          maxLength: 100
+        season:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        match_date:
+          type: string
+          format: date
+          nullable: true
+        match_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        team1:
+          type: string
+          nullable: true
+          maxLength: 255
+        team2:
+          type: string
+          nullable: true
+          maxLength: 255
+        toss_winner:
+          type: string
+          nullable: true
+          maxLength: 255
+        toss_decision:
+          type: string
+          nullable: true
+          maxLength: 50
+        venue:
+          type: string
+          nullable: true
+          maxLength: 255
+        status:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - match_id
+      - season
+    LabelEnum:
+      enum:
+      - UP
+      - DOWN
+      - NEUTRAL
+      type: string
+      description: |-
+        * `UP` - UP
+        * `DOWN` - DOWN
+        * `NEUTRAL` - NEUTRAL
+    LiveDelivery:
+      type: object
+      properties:
+        live_delivery_id:
+          type: integer
+          readOnly: true
+        match_id:
+          type: string
+          readOnly: true
+        source:
+          type: string
+          maxLength: 50
+        source_match_id:
+          type: string
+          maxLength: 50
+        innings:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          nullable: true
+        over_number:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          nullable: true
+        ball_number:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          nullable: true
+        batter_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        bowler_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        non_striker_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        runs_batter:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        runs_extras:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        runs_total:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        extra_type:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ExtraTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        is_wicket:
+          type: boolean
+        wicket_kind:
+          type: string
+          nullable: true
+          maxLength: 50
+        player_out_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        commentary:
+          type: string
+          nullable: true
+        event_key:
+          type: string
+          maxLength: 120
+        is_confirmed:
+          type: boolean
+        raw_json:
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        match:
+          type: string
+        batter:
+          type: string
+          nullable: true
+        bowler:
+          type: string
+          nullable: true
+        non_striker:
+          type: string
+          nullable: true
+        player_out:
+          type: string
+          nullable: true
+      required:
+      - created_at
+      - event_key
+      - live_delivery_id
+      - match
+      - match_id
+      - source_match_id
+      - updated_at
+    LiveMatchState:
+      type: object
+      properties:
+        live_id:
+          type: integer
+          readOnly: true
+        match_id:
+          type: string
+          readOnly: true
+        source:
+          type: string
+          maxLength: 50
+        source_match_id:
+          type: string
+          maxLength: 50
+        status:
+          type: string
+          nullable: true
+          maxLength: 255
+        state:
+          type: string
+          nullable: true
+          maxLength: 100
+        innings:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          nullable: true
+        batting_team:
+          type: string
+          nullable: true
+          maxLength: 255
+        bowling_team:
+          type: string
+          nullable: true
+          maxLength: 255
+        score:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        wickets:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        overs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        current_run_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          nullable: true
+        required_run_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          nullable: true
+        target:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        toss_winner:
+          type: string
+          nullable: true
+          maxLength: 255
+        toss_decision:
+          type: string
+          nullable: true
+          maxLength: 20
+        partnership_runs:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        partnership_balls:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        recent_overs:
+          type: string
+          nullable: true
+          maxLength: 255
+        last5_overs_runs:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        last5_overs_wickets:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        last3_overs_runs:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        powerplay_runs:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        powerplay_from:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
+        powerplay_to:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
+        latest_ball_text:
+          type: string
+          nullable: true
+        raw_json:
+          nullable: true
+        fetched_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        match:
+          type: string
+      required:
+      - created_at
+      - fetched_at
+      - live_id
+      - match
+      - match_id
+      - source_match_id
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    Market:
+      type: object
+      properties:
+        market_id:
+          type: string
+          maxLength: 20
+        event_id:
+          type: string
+          maxLength: 20
+        event_name:
+          type: string
+        market_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        market_type:
+          type: string
+          maxLength: 50
+        event_type_id:
+          type: string
+          maxLength: 10
+        country_code:
+          type: string
+          nullable: true
+          maxLength: 5
+        timezone:
+          type: string
+          nullable: true
+          maxLength: 50
+        market_open_date:
+          type: string
+          format: date-time
+          nullable: true
+        market_start_time:
+          type: string
+          format: date-time
+        suspend_time:
+          type: string
+          format: date-time
+          nullable: true
+        settled_time:
+          type: string
+          format: date-time
+          nullable: true
+        number_of_winners:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        number_of_active_runners:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        bet_delay:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        market_base_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        turn_in_play_enabled:
+          type: boolean
+        persistence_enabled:
+          type: boolean
+        bsp_market:
+          type: boolean
+        bsp_reconciled:
+          type: boolean
+        cross_matching:
+          type: boolean
+        runners_voidable:
+          type: boolean
+        complete:
+          type: boolean
+        regulators:
+          type: string
+          nullable: true
+        opening_status:
+          type: string
+          nullable: true
+          maxLength: 20
+        status:
+          type: string
+          maxLength: 20
+        in_play_seen:
+          type: boolean
+        in_play_start_time:
+          type: string
+          format: date-time
+          nullable: true
+        total_tick_messages:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - event_id
+      - event_name
+      - event_type_id
+      - market_id
+      - market_start_time
+      - market_type
+    MarketRequest:
+      type: object
+      properties:
+        market_id:
+          type: string
+          minLength: 1
+          maxLength: 20
+        event_id:
+          type: string
+          minLength: 1
+          maxLength: 20
+        event_name:
+          type: string
+          minLength: 1
+        market_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        market_type:
+          type: string
+          minLength: 1
+          maxLength: 50
+        event_type_id:
+          type: string
+          minLength: 1
+          maxLength: 10
+        country_code:
+          type: string
+          nullable: true
+          maxLength: 5
+        timezone:
+          type: string
+          nullable: true
+          maxLength: 50
+        market_open_date:
+          type: string
+          format: date-time
+          nullable: true
+        market_start_time:
+          type: string
+          format: date-time
+        suspend_time:
+          type: string
+          format: date-time
+          nullable: true
+        settled_time:
+          type: string
+          format: date-time
+          nullable: true
+        number_of_winners:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        number_of_active_runners:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        bet_delay:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        market_base_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        turn_in_play_enabled:
+          type: boolean
+        persistence_enabled:
+          type: boolean
+        bsp_market:
+          type: boolean
+        bsp_reconciled:
+          type: boolean
+        cross_matching:
+          type: boolean
+        runners_voidable:
+          type: boolean
+        complete:
+          type: boolean
+        regulators:
+          type: string
+          nullable: true
+        opening_status:
+          type: string
+          nullable: true
+          maxLength: 20
+        status:
+          type: string
+          minLength: 1
+          maxLength: 20
+        in_play_seen:
+          type: boolean
+        in_play_start_time:
+          type: string
+          format: date-time
+          nullable: true
+        total_tick_messages:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+      required:
+      - event_id
+      - event_name
+      - event_type_id
+      - market_id
+      - market_start_time
+      - market_type
+    MatchPlayer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        player_name:
+          type: string
+          readOnly: true
+        match_date:
+          type: string
+          format: date
+          readOnly: true
+        match_name:
+          type: string
+          readOnly: true
+        match:
+          type: string
+        player:
+          type: string
+      required:
+      - id
+      - match
+      - match_date
+      - match_name
+      - player
+      - player_name
+    MatchPlayerRequest:
+      type: object
+      properties:
+        match:
+          type: string
+          minLength: 1
+        player:
+          type: string
+          minLength: 1
+      required:
+      - match
+      - player
+    NullEnum:
+      enum:
+      - null
+    PaginatedDeliveryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Delivery'
+    PaginatedIPL2026PlayerListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/IPL2026PlayerList'
+    PaginatedIPLMatchList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/IPLMatch'
+    PaginatedLiveDeliveryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiveDelivery'
+    PaginatedLiveMatchStateList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiveMatchState'
+    PaginatedMarketList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Market'
+    PaginatedMatchPlayerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchPlayer'
+    PaginatedPlayerIPLTeamList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerIPLTeam'
+    PaginatedPlayerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Player'
+    PaginatedPlayerMatchBattingList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerMatchBatting'
+    PaginatedPlayerMatchBowlingList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerMatchBowling'
+    PaginatedPlayerSituationStatsList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerSituationStats'
+    PaginatedPriceTickList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceTick'
+    PaginatedRunnerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Runner'
+    PatchedDeliveryRequest:
+      type: object
+      properties:
+        innings:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        over_number:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        ball_number:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        runs_batter:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        runs_extras:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        runs_total:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        extra_type:
+          type: string
+          nullable: true
+          maxLength: 50
+        is_wicket:
+          type: boolean
+        wicket_kind:
+          type: string
+          nullable: true
+          maxLength: 100
+        match:
+          type: string
+          minLength: 1
+        batter:
+          type: string
+          minLength: 1
+          nullable: true
+        bowler:
+          type: string
+          minLength: 1
+          nullable: true
+        non_striker:
+          type: string
+          minLength: 1
+          nullable: true
+        player_out:
+          type: string
+          minLength: 1
+          nullable: true
+    PatchedIPLMatchRequest:
+      type: object
+      properties:
+        match_id:
+          type: string
+          minLength: 1
+          maxLength: 100
+        season:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        match_date:
+          type: string
+          format: date
+          nullable: true
+        match_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        team1:
+          type: string
+          nullable: true
+          maxLength: 255
+        team2:
+          type: string
+          nullable: true
+          maxLength: 255
+        toss_winner:
+          type: string
+          nullable: true
+          maxLength: 255
+        toss_decision:
+          type: string
+          nullable: true
+          maxLength: 50
+        venue:
+          type: string
+          nullable: true
+          maxLength: 255
+        status:
+          type: string
+          nullable: true
+          maxLength: 255
+    PatchedMarketRequest:
+      type: object
+      properties:
+        market_id:
+          type: string
+          minLength: 1
+          maxLength: 20
+        event_id:
+          type: string
+          minLength: 1
+          maxLength: 20
+        event_name:
+          type: string
+          minLength: 1
+        market_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        market_type:
+          type: string
+          minLength: 1
+          maxLength: 50
+        event_type_id:
+          type: string
+          minLength: 1
+          maxLength: 10
+        country_code:
+          type: string
+          nullable: true
+          maxLength: 5
+        timezone:
+          type: string
+          nullable: true
+          maxLength: 50
+        market_open_date:
+          type: string
+          format: date-time
+          nullable: true
+        market_start_time:
+          type: string
+          format: date-time
+        suspend_time:
+          type: string
+          format: date-time
+          nullable: true
+        settled_time:
+          type: string
+          format: date-time
+          nullable: true
+        number_of_winners:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        number_of_active_runners:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        bet_delay:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        market_base_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        turn_in_play_enabled:
+          type: boolean
+        persistence_enabled:
+          type: boolean
+        bsp_market:
+          type: boolean
+        bsp_reconciled:
+          type: boolean
+        cross_matching:
+          type: boolean
+        runners_voidable:
+          type: boolean
+        complete:
+          type: boolean
+        regulators:
+          type: string
+          nullable: true
+        opening_status:
+          type: string
+          nullable: true
+          maxLength: 20
+        status:
+          type: string
+          minLength: 1
+          maxLength: 20
+        in_play_seen:
+          type: boolean
+        in_play_start_time:
+          type: string
+          format: date-time
+          nullable: true
+        total_tick_messages:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+    PatchedMatchPlayerRequest:
+      type: object
+      properties:
+        match:
+          type: string
+          minLength: 1
+        player:
+          type: string
+          minLength: 1
+    PatchedPatternRequest:
+      type: object
+      properties:
+        feature_vector:
+          type: integer
+          nullable: true
+        market:
+          type: string
+          minLength: 1
+        runner:
+          type: integer
+        runner_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        event_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        market_time:
+          type: string
+          format: date-time
+          nullable: true
+        winner:
+          type: string
+          nullable: true
+          maxLength: 255
+        runner_won:
+          type: boolean
+          nullable: true
+        window_start:
+          type: string
+          format: date-time
+          nullable: true
+        window_end:
+          type: string
+          format: date-time
+          nullable: true
+        window_start_ms:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        window_end_ms:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        window_start_utc:
+          type: string
+          format: date-time
+          nullable: true
+        price_at_start:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        price_at_end:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        price_high:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        price_low:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        price_change_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        momentum:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,6})?$
+          nullable: true
+        volatility:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,6})?$
+          nullable: true
+        trend_slope:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,6})?$
+          nullable: true
+        max_drawdown:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,6})?$
+          nullable: true
+        tick_count:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          nullable: true
+        duration_sec:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        pattern_type:
+          type: string
+          nullable: true
+          maxLength: 100
+        label:
+          $ref: '#/components/schemas/LabelEnum'
+    PatchedPlayerIPLTeamRequest:
+      type: object
+      properties:
+        team_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        team_short:
+          type: string
+          nullable: true
+          maxLength: 20
+        season:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        is_current:
+          type: boolean
+        player:
+          type: string
+          minLength: 1
+    PatchedPlayerMatchBattingRequest:
+      type: object
+      properties:
+        innings:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        runs:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        balls_faced:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        fours:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        sixes:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        strike_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        dismissal_kind:
+          type: string
+          nullable: true
+          maxLength: 100
+        is_not_out:
+          type: boolean
+        match:
+          type: string
+          minLength: 1
+        player:
+          type: string
+          minLength: 1
+    PatchedPlayerMatchBowlingRequest:
+      type: object
+      properties:
+        innings:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        overs_bowled:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        balls_bowled_calc:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        runs_given:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        wickets:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        economy:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        wides:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        noballs:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        match:
+          type: string
+          minLength: 1
+        player:
+          type: string
+          minLength: 1
+    PatchedPlayerRequest:
+      type: object
+      properties:
+        player_id:
+          type: string
+          minLength: 1
+          maxLength: 50
+        player_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        country:
+          type: string
+          nullable: true
+          minLength: 1
+        role:
+          type: string
+          nullable: true
+          maxLength: 100
+        ipl_debut:
+          type: string
+          format: date
+          nullable: true
+        debut_year:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        last_season:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        cricbuzz_profile_id:
+          type: string
+          nullable: true
+          maxLength: 50
+        cricbuzz_profile_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+    PatchedPlayerSituationStatsRequest:
+      type: object
+      properties:
+        phase:
+          type: string
+          minLength: 1
+          maxLength: 50
+        innings_type:
+          type: string
+          minLength: 1
+          maxLength: 50
+        matches_played:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        runs:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        balls:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        strike_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        boundary_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        boundary_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        wickets_lost:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        dismissal_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,4})?$
+          nullable: true
+        player:
+          type: string
+          minLength: 1
+    PatchedPriceTickRequest:
+      type: object
+      properties:
+        market:
+          type: string
+          minLength: 1
+        runner:
+          type: integer
+        year:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        month:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        day:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        snapshot:
+          type: string
+          nullable: true
+          maxLength: 100
+        tick_time:
+          type: string
+          format: date-time
+        ltp:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+        win_prob:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,3})?$
+          nullable: true
+        traded_volume:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        phase:
+          type: string
+          nullable: true
+          maxLength: 20
+    PatchedRunnerRequest:
+      type: object
+      properties:
+        selection_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        runner_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        sort_priority:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        status:
+          type: string
+          minLength: 1
+          maxLength: 20
+        final_result:
+          type: string
+          nullable: true
+          maxLength: 20
+        opening_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        opening_win_prob:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,3})?$
+          nullable: true
+        closing_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        closing_win_prob:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,3})?$
+          nullable: true
+        lowest_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        highest_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        price_range:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        price_change:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        total_ticks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        pre_match_ticks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        in_play_ticks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        first_tick_time:
+          type: string
+          format: date-time
+          nullable: true
+        last_tick_time:
+          type: string
+          format: date-time
+          nullable: true
+        in_play_first_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        in_play_last_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        in_play_min_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        in_play_max_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        market:
+          type: string
+          minLength: 1
+    Pattern:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        feature_vector:
+          type: integer
+          nullable: true
+        market:
+          type: string
+        runner:
+          type: integer
+        market_id:
+          type: string
+          readOnly: true
+        runner_id:
+          type: string
+          readOnly: true
+        runner_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        event_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        market_time:
+          type: string
+          format: date-time
+          nullable: true
+        winner:
+          type: string
+          nullable: true
+          maxLength: 255
+        runner_won:
+          type: boolean
+          nullable: true
+        window_start:
+          type: string
+          format: date-time
+          nullable: true
+        window_end:
+          type: string
+          format: date-time
+          nullable: true
+        window_start_ms:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        window_end_ms:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        window_start_utc:
+          type: string
+          format: date-time
+          nullable: true
+        price_at_start:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        price_at_end:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        price_high:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        price_low:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        price_change_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        momentum:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,6})?$
+          nullable: true
+        volatility:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,6})?$
+          nullable: true
+        trend_slope:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,6})?$
+          nullable: true
+        max_drawdown:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,6})?$
+          nullable: true
+        tick_count:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          nullable: true
+        duration_sec:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        pattern_type:
+          type: string
+          nullable: true
+          maxLength: 100
+        label:
+          $ref: '#/components/schemas/LabelEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - label
+      - market
+      - market_id
+      - runner
+      - runner_id
+    PatternRequest:
+      type: object
+      properties:
+        feature_vector:
+          type: integer
+          nullable: true
+        market:
+          type: string
+          minLength: 1
+        runner:
+          type: integer
+        runner_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        event_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        market_time:
+          type: string
+          format: date-time
+          nullable: true
+        winner:
+          type: string
+          nullable: true
+          maxLength: 255
+        runner_won:
+          type: boolean
+          nullable: true
+        window_start:
+          type: string
+          format: date-time
+          nullable: true
+        window_end:
+          type: string
+          format: date-time
+          nullable: true
+        window_start_ms:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        window_end_ms:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        window_start_utc:
+          type: string
+          format: date-time
+          nullable: true
+        price_at_start:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        price_at_end:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        price_high:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        price_low:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        price_change_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
+          nullable: true
+        momentum:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,6})?$
+          nullable: true
+        volatility:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,6})?$
+          nullable: true
+        trend_slope:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,6})?$
+          nullable: true
+        max_drawdown:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,6})?$
+          nullable: true
+        tick_count:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          nullable: true
+        duration_sec:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        pattern_type:
+          type: string
+          nullable: true
+          maxLength: 100
+        label:
+          $ref: '#/components/schemas/LabelEnum'
+      required:
+      - label
+      - market
+      - runner
+    Player:
+      type: object
+      properties:
+        player_id:
+          type: string
+          maxLength: 50
+        player_name:
+          type: string
+          maxLength: 255
+        normalized_name:
+          type: string
+          readOnly: true
+        country:
+          type: string
+          nullable: true
+        role:
+          type: string
+          nullable: true
+          maxLength: 100
+        ipl_debut:
+          type: string
+          format: date
+          nullable: true
+        debut_year:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        last_season:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        cricbuzz_profile_id:
+          type: string
+          nullable: true
+          maxLength: 50
+        cricbuzz_profile_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - normalized_name
+      - player_id
+      - player_name
+    PlayerIPLTeam:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        player_name:
+          type: string
+          readOnly: true
+        team_name:
+          type: string
+          maxLength: 255
+        team_short:
+          type: string
+          nullable: true
+          maxLength: 20
+        season:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        is_current:
+          type: boolean
+        player:
+          type: string
+      required:
+      - id
+      - player
+      - player_name
+      - season
+      - team_name
+    PlayerIPLTeamRequest:
+      type: object
+      properties:
+        team_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        team_short:
+          type: string
+          nullable: true
+          maxLength: 20
+        season:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        is_current:
+          type: boolean
+        player:
+          type: string
+          minLength: 1
+      required:
+      - player
+      - season
+      - team_name
+    PlayerMatchBatting:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        player_name:
+          type: string
+          readOnly: true
+        match_date:
+          type: string
+          format: date
+          readOnly: true
+        match_name:
+          type: string
+          readOnly: true
+        innings:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        runs:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        balls_faced:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        fours:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        sixes:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        strike_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        dismissal_kind:
+          type: string
+          nullable: true
+          maxLength: 100
+        is_not_out:
+          type: boolean
+        match:
+          type: string
+        player:
+          type: string
+      required:
+      - id
+      - innings
+      - match
+      - match_date
+      - match_name
+      - player
+      - player_name
+    PlayerMatchBattingRequest:
+      type: object
+      properties:
+        innings:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        runs:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        balls_faced:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        fours:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        sixes:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        strike_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        dismissal_kind:
+          type: string
+          nullable: true
+          maxLength: 100
+        is_not_out:
+          type: boolean
+        match:
+          type: string
+          minLength: 1
+        player:
+          type: string
+          minLength: 1
+      required:
+      - innings
+      - match
+      - player
+    PlayerMatchBowling:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        player_name:
+          type: string
+          readOnly: true
+        match_date:
+          type: string
+          format: date
+          readOnly: true
+        match_name:
+          type: string
+          readOnly: true
+        innings:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        overs_bowled:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        balls_bowled_calc:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        runs_given:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        wickets:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        economy:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        wides:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        noballs:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        match:
+          type: string
+        player:
+          type: string
+      required:
+      - id
+      - innings
+      - match
+      - match_date
+      - match_name
+      - player
+      - player_name
+    PlayerMatchBowlingRequest:
+      type: object
+      properties:
+        innings:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        overs_bowled:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        balls_bowled_calc:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        runs_given:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        wickets:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        economy:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        wides:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        noballs:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        match:
+          type: string
+          minLength: 1
+        player:
+          type: string
+          minLength: 1
+      required:
+      - innings
+      - match
+      - player
+    PlayerProfile:
+      type: object
+      properties:
+        player_id:
+          type: string
+        player_name:
+          type: string
+        country:
+          type: string
+          nullable: true
+        role:
+          type: string
+          nullable: true
+        ipl_debut:
+          type: string
+          format: date
+          nullable: true
+        last_season:
+          type: integer
+          nullable: true
+        current_team:
+          type: string
+          nullable: true
+        teams_played_for:
+          type: array
+          items:
+            type: string
+        total_matches:
+          type: integer
+        matches_in_2026:
+          type: integer
+        last_match_played:
+          type: string
+          format: date
+          nullable: true
+        batting:
+          type: object
+          additionalProperties: {}
+        bowling:
+          type: object
+          additionalProperties: {}
+        situation_stats:
+          type: array
+          items: {}
+        recent_matches:
+          type: array
+          items: {}
+      required:
+      - batting
+      - bowling
+      - country
+      - current_team
+      - ipl_debut
+      - last_match_played
+      - last_season
+      - matches_in_2026
+      - player_id
+      - player_name
+      - recent_matches
+      - role
+      - situation_stats
+      - teams_played_for
+      - total_matches
+    PlayerRequest:
+      type: object
+      properties:
+        player_id:
+          type: string
+          minLength: 1
+          maxLength: 50
+        player_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        country:
+          type: string
+          nullable: true
+          minLength: 1
+        role:
+          type: string
+          nullable: true
+          maxLength: 100
+        ipl_debut:
+          type: string
+          format: date
+          nullable: true
+        debut_year:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        last_season:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        cricbuzz_profile_id:
+          type: string
+          nullable: true
+          maxLength: 50
+        cricbuzz_profile_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+      required:
+      - player_id
+      - player_name
+    PlayerSituationStats:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        player_name:
+          type: string
+          readOnly: true
+        phase:
+          type: string
+          maxLength: 50
+        innings_type:
+          type: string
+          maxLength: 50
+        matches_played:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        runs:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        balls:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        strike_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        boundary_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        boundary_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        wickets_lost:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        dismissal_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,4})?$
+          nullable: true
+        player:
+          type: string
+      required:
+      - id
+      - innings_type
+      - phase
+      - player
+      - player_name
+    PlayerSituationStatsRequest:
+      type: object
+      properties:
+        phase:
+          type: string
+          minLength: 1
+          maxLength: 50
+        innings_type:
+          type: string
+          minLength: 1
+          maxLength: 50
+        matches_played:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        runs:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        balls:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        strike_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        boundary_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        boundary_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        wickets_lost:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        dismissal_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,4})?$
+          nullable: true
+        player:
+          type: string
+          minLength: 1
+      required:
+      - innings_type
+      - phase
+      - player
+    PriceTick:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        market:
+          type: string
+        market_id:
+          type: string
+          readOnly: true
+        market_name:
+          type: string
+          readOnly: true
+        event_name:
+          type: string
+          readOnly: true
+        runner:
+          type: integer
+        selection_id:
+          type: integer
+          readOnly: true
+        runner_name:
+          type: string
+          readOnly: true
+        year:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        month:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        day:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        snapshot:
+          type: string
+          nullable: true
+          maxLength: 100
+        tick_time:
+          type: string
+          format: date-time
+        ltp:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+        win_prob:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,3})?$
+          nullable: true
+        traded_volume:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        phase:
+          type: string
+          nullable: true
+          maxLength: 20
+      required:
+      - event_name
+      - id
+      - ltp
+      - market
+      - market_id
+      - market_name
+      - runner
+      - runner_name
+      - selection_id
+      - tick_time
+    PriceTickRequest:
+      type: object
+      properties:
+        market:
+          type: string
+          minLength: 1
+        runner:
+          type: integer
+        year:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        month:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        day:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        snapshot:
+          type: string
+          nullable: true
+          maxLength: 100
+        tick_time:
+          type: string
+          format: date-time
+        ltp:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+        win_prob:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,3})?$
+          nullable: true
+        traded_volume:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
+        phase:
+          type: string
+          nullable: true
+          maxLength: 20
+      required:
+      - ltp
+      - market
+      - runner
+      - tick_time
+    Runner:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        market_id:
+          type: string
+          readOnly: true
+        event_name:
+          type: string
+          readOnly: true
+        selection_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        runner_name:
+          type: string
+          maxLength: 255
+        sort_priority:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        status:
+          type: string
+          maxLength: 20
+        final_result:
+          type: string
+          nullable: true
+          maxLength: 20
+        opening_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        opening_win_prob:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,3})?$
+          nullable: true
+        closing_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        closing_win_prob:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,3})?$
+          nullable: true
+        lowest_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        highest_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        price_range:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        price_change:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        total_ticks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        pre_match_ticks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        in_play_ticks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        first_tick_time:
+          type: string
+          format: date-time
+          nullable: true
+        last_tick_time:
+          type: string
+          format: date-time
+          nullable: true
+        in_play_first_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        in_play_last_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        in_play_min_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        in_play_max_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        market:
+          type: string
+      required:
+      - event_name
+      - id
+      - market
+      - market_id
+      - runner_name
+      - selection_id
+    RunnerRequest:
+      type: object
+      properties:
+        selection_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        runner_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        sort_priority:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        status:
+          type: string
+          minLength: 1
+          maxLength: 20
+        final_result:
+          type: string
+          nullable: true
+          maxLength: 20
+        opening_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        opening_win_prob:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,3})?$
+          nullable: true
+        closing_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        closing_win_prob:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,3})?$
+          nullable: true
+        lowest_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        highest_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        price_range:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        price_change:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        total_ticks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        pre_match_ticks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        in_play_ticks:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        first_tick_time:
+          type: string
+          format: date-time
+          nullable: true
+        last_tick_time:
+          type: string
+          format: date-time
+          nullable: true
+        in_play_first_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        in_play_last_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        in_play_min_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        in_play_max_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          nullable: true
+        market:
+          type: string
+          minLength: 1
+      required:
+      - market
+      - runner_name
+      - selection_id
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+      required:
+      - access
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - refresh
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

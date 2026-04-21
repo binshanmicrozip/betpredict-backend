@@ -18,7 +18,7 @@ class Command(BaseCommand):
             "--markets",
             type=str,
             required=True,
-            help="Comma separated subscribe market ids. Example: 1.256693299"
+            help="Comma separated subscribe market codes. Example: 1,2,3,4,5 or 1.256693299"
         )
 
     def handle(self, *args, **options):

@@ -4,8 +4,8 @@ from django.conf import settings
 
 from .redis_cricket import get_latest_cricket
 from .redis_price import get_latest_price
-from .predictor import predict
-from .channel_push import push_signal_to_frontend
+from .predictor import predict, has_cricket_data, has_market_data
+from .services.live_signal_service import process_and_push_live_update
 
 
 r = redis.Redis(
@@ -14,16 +14,50 @@ r = redis.Redis(
     db=settings.REDIS_DB,
     decode_responses=True,
 )
-def pretty_print_signal(result):
+
+
+def normalize_price(market_id: str, runner_id: str, raw_price: dict) -> dict:
+    return {
+        "market_id": str(market_id),
+        "runner_id": str(runner_id),
+        "ltp": float(raw_price.get("ltp")) if raw_price.get("ltp") is not None else None,
+        "prev_ltp": float(raw_price.get("prev_ltp")) if raw_price.get("prev_ltp") is not None else None,
+        "tv": float(raw_price.get("tv", 0)) if raw_price.get("tv") is not None else 0.0,
+        "updated_at": raw_price.get("updated_at"),
+    }
+
+
+def resolve_status(cricket: dict, price: dict) -> str:
+    cricket_status = cricket.get("status")
+
+    if cricket_status == "no_new_ball":
+        return "no_new_ball"
+
+    cricket_ok = has_cricket_data(cricket)
+    market_ok = has_market_data(price)
+
+    if cricket_ok and market_ok:
+        return "live"
+
+    if market_ok:
+        return "market_only"
+
+    return "no_data"
+
+
+def pretty_print_signal(result: dict):
     cricket = result.get("cricket", {})
     price = result.get("price", {})
     prediction = result.get("prediction", {})
+    history = result.get("history", {})
 
-    print("\n" + "="*55)
+    print("\n" + "=" * 60)
     print("📡 MATCH UPDATE")
-    print("="*55)
+    print("=" * 60)
 
     print(f"🏏 Match ID: {result.get('source_match_id')}")
+    print(f"📌 Status: {result.get('status')}")
+    print(f"🎯 Ball Key: {result.get('ball_key')}")
     print(f"📊 Score: {cricket.get('score')} ({cricket.get('overs')} overs)")
     print(f"⚡ CRR: {cricket.get('crr')}")
 
@@ -35,109 +69,56 @@ def pretty_print_signal(result):
     print(f"   {cricket.get('latest_ball')}")
 
     print("\n💰 Market:")
-    print(f"   LTP: {price.get('ltp')} | Prev: {price.get('prev_ltp')}")
+    print(f"   LTP: {price.get('ltp')} | Prev: {price.get('prev_ltp')} | TV: {price.get('tv')}")
 
-    print("\n" + "-"*55)
-    print(f"📌 STATUS: {result.get('status').upper()}")
+    print("\n📜 History:")
+    print(f"   Balls stored: {len(history.get('balls', []))}")
+    print(f"   Market ticks stored: {len(history.get('market', []))}")
 
-    if prediction:
-        print("\n🤖 PREDICTION:")
-        print(f"   Signal: {prediction.get('signal')}")
-        print(f"   Confidence: {round(prediction.get('confidence', 0)*100, 2)}%")
-        print(f"   Reason: {prediction.get('reason')}")
-
-    print("="*55 + "\n")
-
-def build_ball_key(cricket: dict) -> str:
-    overs = cricket.get("overs", "")
-    score = cricket.get("score", "")
-    recent = cricket.get("recent", "")
-    latest_ball = cricket.get("latest_ball", "")
-    return f"{overs}|{score}|{recent}|{latest_ball}"
+    print("\n🤖 Prediction:")
+    print(json.dumps(prediction, indent=2, ensure_ascii=False))
 
 
-def combine_live_inputs(source_match_id: str, market_id: str, runner_id: str) -> dict:
-    cricket = get_latest_cricket(source_match_id)
-    price = get_latest_price(market_id, runner_id)
+def run_live_prediction(match_id: str, market_id: str, runner_id: str) -> dict:
+    cricket = get_latest_cricket(match_id) or {}
+    raw_price = get_latest_price(market_id, runner_id) or {}
+    price = normalize_price(market_id, runner_id, raw_price)
 
-    # print(f"[SignalEngine] source_match_id={source_match_id}")
-    # print(f"[SignalEngine] market_id={market_id}, runner_id={runner_id}")
-    # print(f"[SignalEngine] cricket={cricket}")
-    # print(f"[SignalEngine] price={price}")
+    status = resolve_status(cricket, price)
 
-    return {
-        "source_match_id": str(source_match_id),
+    prediction_payload = {
+        "status": status,
+        "source_match_id": str(match_id),
         "market_id": str(market_id),
         "runner_id": str(runner_id),
-        "cricket": cricket or {},
-        "price": price or {},
-    }
-
-
-def run_live_prediction(source_match_id: str, market_id: str, runner_id: str) -> dict:
-    combined = combine_live_inputs(source_match_id, market_id, runner_id)
-
-    cricket = combined["cricket"]
-    price = combined["price"]
-
-    if not cricket:
-        # print("[SignalEngine] No cricket data")
-        return {
-            "status": "no_cricket_data",
-            "type": "bet_signal",
-            "source_match_id": str(source_match_id),
-            "market_id": str(market_id),
-            "runner_id": str(runner_id),
-            "cricket": {},
-            "price": price,
-            "prediction": None,
-        }
-
-    current_ball_key = build_ball_key(cricket)
-    redis_ball_key = f"betsignal:last_ball:{source_match_id}:{market_id}:{runner_id}"
-    previous_ball_key = r.get(redis_ball_key)
-
-    # print(f"[SignalEngine] previous_ball_key={previous_ball_key}")
-    # print(f"[SignalEngine] current_ball_key={current_ball_key}")
-
-    if previous_ball_key == current_ball_key:
-     
-        return {
-            "status": "no_new_ball",
-            "type": "bet_signal",
-            "source_match_id": str(source_match_id),
-            "market_id": str(market_id),
-            "runner_id": str(runner_id),
-            "ball_key": current_ball_key,
-            "cricket": cricket,
-            "price": price,
-            "prediction": None,
-        }
-
-    r.set(redis_ball_key, current_ball_key)
-
-
-    prediction = predict(cricket, price)
-    # print(f"[SignalEngine] prediction={prediction}")
-
-    payload = {
-        "status": "predicted",
-        "type": "bet_signal",
-        "source_match_id": str(source_match_id),
-        "market_id": str(market_id),
-        "runner_id": str(runner_id),
-        "ball_key": current_ball_key,
         "cricket": cricket,
         "price": price,
-        "prediction": prediction,
     }
 
-    redis_latest_key = f"betsignal:latest:{source_match_id}:{market_id}:{runner_id}"
-    r.set(redis_latest_key, json.dumps(payload))
-    # print(f"[SignalEngine] Saved latest payload in Redis: {redis_latest_key}")
+    prediction = predict(prediction_payload)
 
-    push_signal_to_frontend(payload)
-    # print("[SignalEngine] Pushed signal to frontend websocket")
+    # IMPORTANT: raw_json must be inside cricket
+    raw_json = cricket.get("raw_json", {}) or {}
+
+    payload = process_and_push_live_update(
+        source_match_id=str(match_id),
+        market_id=str(market_id),
+        runner_id=str(runner_id),
+        cricket=cricket,
+        raw_json=raw_json,
+        price=price,
+        prediction=prediction,
+    )
+
+    payload["status"] = status
+    payload["type"] = "bet_signal"
+
+    print("\n" + "-" * 60)
+    print(f"📌 STATUS: {status.upper()}")
+    print("-" * 60)
+    print(payload)
+
+    print(f"[ChannelPush] Pushing to group bet_signals: {payload}")
 
     pretty_print_signal(payload)
 

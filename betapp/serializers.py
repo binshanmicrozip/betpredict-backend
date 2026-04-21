@@ -1,15 +1,17 @@
 from rest_framework import serializers
+from typing import Any
 
 from django.contrib.auth import authenticate
 
-from .models import (Market, Runner, PriceTick, Player,
+from .models import (Market, Runner, PriceTick, Pattern, Player,
     PlayerIPLTeam,
     IPLMatch,
     MatchPlayer,
     Delivery,
     PlayerMatchBatting,
     PlayerMatchBowling,
-    PlayerSituationStats,)
+    PlayerSituationStats, LiveMarketTick,)
+
 
 
 class LoginSerializer(serializers.Serializer):
@@ -79,12 +81,103 @@ class PriceTickSerializer(serializers.ModelSerializer):
             "phase",
         ]
 
+
+class PatternSerializer(serializers.ModelSerializer):
+    market_id = serializers.CharField(source="market.market_id", read_only=True)
+    runner_id = serializers.CharField(source="runner.runner_id", read_only=True)
+
+    class Meta:
+        model = Pattern
+        fields = [
+            "id",
+            "feature_vector",
+            "market",
+            "runner",
+            "market_id",
+            "runner_id",
+            "runner_name",
+            "event_name",
+            "market_time",
+            "winner",
+            "runner_won",
+            "window_start",
+            "window_end",
+            "window_start_ms",
+            "window_end_ms",
+            "window_start_utc",
+            "price_at_start",
+            "price_at_end",
+            "price_high",
+            "price_low",
+            "price_change_pct",
+            "momentum",
+            "volatility",
+            "trend_slope",
+            "max_drawdown",
+            "tick_count",
+            "duration_sec",
+            "pattern_type",
+            "label",
+            "created_at",
+        ]
+
+
+
+from rest_framework import serializers
+from .models import LiveMarketTick
+
+
+class LiveMarketTickSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LiveMarketTick
+        fields = [
+            "market_id",
+            "event_id",
+            "event_name",
+            "market_type",
+            "market_time",
+            "runner_id",
+            "runner_name",
+            "publish_time_ms",
+            "publish_time_utc",
+            "ltp",
+            "prev_ltp",
+            "price_change",
+            "price_change_pct",
+            "price_direction",
+            "market_status",
+            "in_play",
+            "bet_delay",
+            "winner",
+            "settled_time",
+            "year",
+            "month",
+        ]
 class PlayerSerializer(serializers.ModelSerializer):
+    country = serializers.CharField(
+        allow_null=True,
+        required=False
+    )
+
     class Meta:
         model = Player
-        fields = "__all__"
-
-
+        fields = [
+            "player_id",
+            "player_name",
+            "normalized_name",
+            "country",
+            "role",
+            "ipl_debut",
+            "debut_year",
+            "last_season",
+            "cricbuzz_profile_id",
+            "cricbuzz_profile_url",
+            "created_at",
+        ]
+        read_only_fields = [
+            "created_at",
+            "normalized_name",
+        ]
 class PlayerIPLTeamSerializer(serializers.ModelSerializer):
     player_name = serializers.CharField(source="player.player_name", read_only=True)
 
@@ -108,7 +201,7 @@ class MatchPlayerSerializer(serializers.ModelSerializer):
         model = MatchPlayer
         fields = "__all__"
 
-    def get_match_name(self, obj):
+    def get_match_name(self, obj) -> str:
         return f"{obj.match.team_home} vs {obj.match.team_away}"
 
 
@@ -133,7 +226,7 @@ class PlayerMatchBattingSerializer(serializers.ModelSerializer):
         model = PlayerMatchBatting
         fields = "__all__"
 
-    def get_match_name(self, obj):
+    def get_match_name(self, obj) -> str:
         return f"{obj.match.team_home} vs {obj.match.team_away}"
 
 
@@ -146,7 +239,7 @@ class PlayerMatchBowlingSerializer(serializers.ModelSerializer):
         model = PlayerMatchBowling
         fields = "__all__"
 
-    def get_match_name(self, obj):
+    def get_match_name(self, obj) -> str:
         return f"{obj.match.team_home} vs {obj.match.team_away}"
 
 
@@ -157,19 +250,22 @@ class PlayerSituationStatsSerializer(serializers.ModelSerializer):
         model = PlayerSituationStats
         fields = "__all__"
 
+
 class IPL2026PlayerListSerializer(serializers.Serializer):
     player_id = serializers.CharField()
     player_name = serializers.CharField()
     role = serializers.CharField(allow_null=True)
-    nationality = serializers.CharField(allow_null=True)
+    country = serializers.CharField(allow_null=True)
     current_team = serializers.CharField(allow_null=True)
     matches_played = serializers.IntegerField()
     ipl_debut = serializers.DateField(allow_null=True)
     last_season = serializers.IntegerField(allow_null=True)
+
+
 class PlayerProfileSerializer(serializers.Serializer):
     player_id = serializers.CharField()
     player_name = serializers.CharField()
-    nationality = serializers.CharField(allow_null=True)
+    country = serializers.CharField(allow_null=True)
     role = serializers.CharField(allow_null=True)
     ipl_debut = serializers.DateField(allow_null=True)
     last_season = serializers.IntegerField(allow_null=True)
@@ -184,7 +280,6 @@ class PlayerProfileSerializer(serializers.Serializer):
     bowling = serializers.DictField()
     situation_stats = serializers.ListField()
     recent_matches = serializers.ListField()
-
 from .models import LiveMatchState, LiveDelivery
 
 

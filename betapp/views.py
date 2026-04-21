@@ -8,22 +8,24 @@ from django.db.models import Sum, Max, Count, Q
 from django.db.models.functions import Coalesce
 from rest_framework.decorators import action
 
-from .models import (Market, Runner, PriceTick, Player,
+from .models import (Market, Runner, PriceTick, Pattern, Player,
     PlayerIPLTeam,
     IPLMatch,
     MatchPlayer,
     Delivery,
     PlayerMatchBatting,
     PlayerMatchBowling,
-    PlayerSituationStats,)
-from .serializers import (MarketSerializer, RunnerSerializer, PriceTickSerializer, PlayerSerializer,
+    PlayerSituationStats,LiveMarketTick,)
+from .serializers import (MarketSerializer, RunnerSerializer, PriceTickSerializer, PatternSerializer, PlayerSerializer,
     PlayerIPLTeamSerializer,
     IPLMatchSerializer,
     MatchPlayerSerializer,
     DeliverySerializer,
     PlayerMatchBattingSerializer,
     PlayerMatchBowlingSerializer,
-    PlayerSituationStatsSerializer, PlayerProfileSerializer, IPL2026PlayerListSerializer)
+    PlayerSituationStatsSerializer,
+    IPL2026PlayerListSerializer,
+    PlayerProfileSerializer, LiveMarketTickSerializer)
 from .pagination import StandardResultsSetPagination
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -62,40 +64,63 @@ r = redis.Redis(
 )
 
 
+class LatestPredictionView(APIView):
+    @extend_schema(
+        tags=["Predictions"],
+        summary="Get latest prediction",
+        responses={200: dict, 404: dict},
+    )
+    def get(self, request):
+        raw = r.get("prediction:latest")
+        if not raw:
+            return Response({"message": "No prediction yet"}, status=404)
+        return Response(json.loads(raw))
+
+
 @api_view(["GET"])
 def latest_prediction(request):
-    raw = r.get("prediction:latest")
-    if not raw:
-        return Response({"message": "No prediction yet"}, status=404)
-    return Response(json.loads(raw))
+    view = LatestPredictionView()
+    return view.get(request)
+
+
+class PredictSignalView(APIView):
+    @extend_schema(
+        tags=["Predictions"],
+        summary="Generate prediction signal",
+        request=dict,
+        responses={200: dict, 400: dict, 500: dict},
+    )
+    def post(self, request):
+        cricket = request.data.get("cricket", {})
+        print("DDDDDDDDDDDDD",cricket)
+        price = request.data.get("price", {})
+
+        if not isinstance(cricket, dict):
+            return Response(
+                {"error": "cricket must be an object"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not isinstance(price, dict):
+            return Response(
+                {"error": "price must be an object"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            result = predict(cricket, price)
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 @api_view(["POST"])
 def predict_signal(request):
-    cricket = request.data.get("cricket", {})
-    print("DDDDDDDDDDDDD",cricket)
-    price = request.data.get("price", {})
-
-    if not isinstance(cricket, dict):
-        return Response(
-            {"error": "cricket must be an object"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    if not isinstance(price, dict):
-        return Response(
-            {"error": "price must be an object"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    try:
-        result = predict(cricket, price)
-        return Response(result, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response(
-            {"error": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    view = PredictSignalView()
+    return view.post(request)
 
 
 
@@ -457,24 +482,86 @@ class PriceTickViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+    
 
 
+class LiveMarketTickViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = LiveMarketTick.objects.all().order_by("-publish_time_utc")
+    serializer_class = LiveMarketTickSerializer
+
+
+    
+@extend_schema_view(
+    list=extend_schema(tags=["Patterns"]),
+    retrieve=extend_schema(tags=["Patterns"]),
+    create=extend_schema(tags=["Patterns"]),
+    update=extend_schema(tags=["Patterns"]),
+    partial_update=extend_schema(tags=["Patterns"]),
+    destroy=extend_schema(tags=["Patterns"]),
+)
+
+class PatternViewSet(viewsets.ModelViewSet):
+    queryset = Pattern.objects.select_related("market", "runner", "feature_vector").all().order_by("-id")
+    serializer_class = PatternSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+
+    filterset_fields = [
+        "label",
+        "pattern_type",
+        "market",
+        "runner",
+        "runner_won",
+    ]
+
+    search_fields = [
+        "runner_name",
+        "event_name",
+        "winner",
+        "pattern_type",
+        "label",
+    ]
+
+    ordering_fields = [
+        "id",
+        "market_time",
+        "window_start",
+        "window_end",
+        "price_change_pct",
+        "momentum",
+        "volatility",
+        "trend_slope",
+        "max_drawdown",
+        "tick_count",
+        "duration_sec",
+        "created_at",
+    ]
+
+class IngestTicksView(APIView):
+    @extend_schema(
+        tags=["Price Ticks"],
+        summary="Ingest batch of price ticks",
+        request=list,
+        responses={200: dict, 400: dict},
+    )
+    def post(self, request):
+        ticks = request.data
+
+        if not isinstance(ticks, list):
+            return Response({"error": "Expected list of ticks"}, status=400)
+
+        task = insert_ticks.delay(ticks)
+
+        return Response({
+            "message": "Tick batch queued",
+            "task_id": task.id,
+            "count": len(ticks)
+        })
 
 
 @api_view(["POST"])
 def ingest_ticks(request):
-    ticks = request.data
-
-    if not isinstance(ticks, list):
-        return Response({"error": "Expected list of ticks"}, status=400)
-
-    task = insert_ticks.delay(ticks)
-
-    return Response({
-        "message": "Tick batch queued",
-        "task_id": task.id,
-        "count": len(ticks)
-    })
+    view = IngestTicksView()
+    return view.post(request)
 
 
 
@@ -523,69 +610,30 @@ def health_check(request):
 
 @extend_schema_view(
     list=extend_schema(
-        tags=["Players"],
+        summary="List all players"
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve player by player_id",
         parameters=[
             OpenApiParameter(
-                name="player",
+                name="player_id",
                 type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
-                description="Filter by Cricsheet player id, for example 1c2a64cd",
-            ),
-            OpenApiParameter(
-                name="match__season",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                description="Filter by season, for example 2026",
-            ),
-            OpenApiParameter(
-                name="team_name",
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
-                description="Filter by team name",
-            ),
-            OpenApiParameter(
-                name="match__match_date__gte",
-                type=OpenApiTypes.DATE,
-                location=OpenApiParameter.QUERY,
-                description="Match date greater than or equal to",
-            ),
-            OpenApiParameter(
-                name="match__match_date__lte",
-                type=OpenApiTypes.DATE,
-                location=OpenApiParameter.QUERY,
-                description="Match date less than or equal to",
-            ),
+                location=OpenApiParameter.PATH,
+                description="Player ID string. Example: 1c2a64cd or viratkohli_88733497",
+            )
         ],
     ),
-    retrieve=extend_schema(tags=["Players"]),
-    create=extend_schema(tags=["Players"]),
-    update=extend_schema(tags=["Players"]),
-    partial_update=extend_schema(tags=["Players"]),
-    destroy=extend_schema(tags=["Players"]),
 )
 class PlayerViewSet(viewsets.ModelViewSet):
-    queryset = MatchPlayer.objects.select_related("match", "player").all().order_by("match__match_date")
-    serializer_class = MatchPlayerSerializer
+    queryset = Player.objects.all().order_by("player_name")
+    serializer_class = PlayerSerializer
+    lookup_field = "player_id"
+    lookup_value_regex = "[^/]+"
+
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-
-    filterset_fields = {
-        "match": ["exact"],
-        "player": ["exact"],
-        "team_name": ["exact", "icontains"],
-        "batting_position": ["exact"],
-        "match__season": ["exact"],
-        "match__match_date": ["exact", "gte", "lte"],
-    }
-
-    search_fields = [
-        "team_name",
-        "player__player_name",
-        "player__player_id",
-        "match__match_id",
-        "match__team_home",
-        "match__team_away",
-    ]
-    ordering_fields = ["batting_position", "match__match_date"]
+    filterset_fields = ["role", "country", "debut_year", "last_season"]
+    search_fields = ["player_name", "normalized_name", "cricbuzz_profile_id"]
+    ordering_fields = ["player_name", "debut_year", "last_season", "created_at"]
 
     @extend_schema(
         tags=["Players"],
@@ -595,16 +643,176 @@ class PlayerViewSet(viewsets.ModelViewSet):
                 type=OpenApiTypes.STR,
                 location=OpenApiParameter.PATH,
                 required=True,
-                description="Cricsheet player id, for example 1c2a64cd",
+                description="Player id, for example 1c2a64cd",
             ),
         ],
     )
     @action(detail=False, methods=["get"], url_path=r"by-player/(?P<player_id>[^/.]+)")
     def by_player(self, request, player_id=None):
-        qs = self.get_queryset().filter(player_id=player_id)
-        serializer = self.get_serializer(qs, many=True)
-        return Response(serializer.data)
-    
+        obj = self.get_queryset().filter(player_id=player_id).first()
+        if not obj:
+            return Response({"detail": "Player not found"}, status=404)
+        return Response(self.get_serializer(obj).data)
+
+    @extend_schema(
+        tags=["Players"],
+        responses=IPL2026PlayerListSerializer(many=True),
+    )
+    @action(detail=False, methods=["get"], url_path="ipl-2026")
+    def ipl_2026(self, request):
+        season = 2026
+        current_team_map = {
+            row["player_id"]: row["team_name"]
+            for row in PlayerIPLTeam.objects.filter(season=season, is_current=True).values("player_id", "team_name")
+        }
+
+        matches_map = {
+            row["player_id"]: row["cnt"]
+            for row in MatchPlayer.objects.filter(match__season=season)
+            .values("player_id")
+            .annotate(cnt=Count("match_id", distinct=True))
+        }
+
+        players = Player.objects.filter(ipl_teams__season=season).distinct().order_by("player_name")
+        data = []
+        for p in players:
+            data.append({
+                "player_id": p.player_id,
+                "player_name": p.player_name,
+                "role": p.role,
+                "country": p.country,
+                "current_team": current_team_map.get(p.player_id),
+                "matches_played": matches_map.get(p.player_id, 0),
+                "ipl_debut": p.ipl_debut,
+                "last_season": p.last_season,
+            })
+        return Response(data)
+
+ 
+    @extend_schema(
+        tags=["Players"],
+        parameters=[
+            OpenApiParameter(
+                name="player_id",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH,
+                required=True,
+                description="Player id",
+            ),
+        ],
+        responses=PlayerProfileSerializer,
+    )
+    @action(detail=False, methods=["get"], url_path=r"profile/(?P<player_id>[^/.]+)")
+    def profile(self, request, player_id=None):
+        player = Player.objects.filter(player_id=player_id).first()
+        if not player:
+            return Response({"detail": "Player not found"}, status=404)
+
+        current_team = (
+            PlayerIPLTeam.objects.filter(player=player, season=2026, is_current=True)
+            .values_list("team_name", flat=True)
+            .first()
+        )
+
+        teams_played_for = list(
+            PlayerIPLTeam.objects.filter(player=player)
+            .order_by("season", "team_name")
+            .values_list("team_name", flat=True)
+            .distinct()
+        )
+
+        total_matches = MatchPlayer.objects.filter(player=player).values("match").distinct().count()
+        matches_in_2026 = MatchPlayer.objects.filter(player=player, match__season=2026).values("match").distinct().count()
+        last_match_played = MatchPlayer.objects.filter(player=player).aggregate(dt=Max("match__match_date"))["dt"]
+
+        batting_qs = PlayerMatchBatting.objects.filter(player=player)
+        bowling_qs = PlayerMatchBowling.objects.filter(player=player)
+        situation_qs = PlayerSituationStats.objects.filter(player=player).values(
+            "phase", "innings_type", "matches_played", "runs", "balls",
+            "strike_rate", "boundary_count", "boundary_pct", "wickets_lost", "dismissal_rate"
+        )
+
+        recent_matches = list(
+            MatchPlayer.objects.filter(player=player)
+            .select_related("match")
+            .order_by("-match__match_date")[:10]
+            .values(
+                "match__match_id",
+                "match__match_date",
+                "match__team_home",
+                "match__team_away",
+                "team_name",
+                "batting_position",
+            )
+        )
+
+        batting_agg = batting_qs.aggregate(
+            innings=Count("id"),
+            total_runs=Sum("runs"),
+            total_balls=Sum("balls_faced"),
+            total_fours=Sum("fours"),
+            total_sixes=Sum("sixes"),
+            highest_score=Max("runs"),
+        )
+
+        not_outs = batting_qs.filter(is_not_out=True).count()
+        batting_innings = batting_agg["innings"] or 0
+        total_runs_value = batting_agg["total_runs"] or 0
+        total_balls_value = batting_agg["total_balls"] or 0
+        outs = batting_innings - not_outs if batting_innings >= not_outs else 0
+
+        batting = {
+            "innings": batting_innings,
+            "total_runs": total_runs_value,
+            "total_balls": total_balls_value,
+            "total_fours": batting_agg["total_fours"] or 0,
+            "total_sixes": batting_agg["total_sixes"] or 0,
+            "highest_score": batting_agg["highest_score"] or 0,
+            "not_outs": not_outs,
+            "batting_average": round(total_runs_value / outs, 2) if outs > 0 else None,
+            "strike_rate": round((total_runs_value / total_balls_value) * 100, 2) if total_balls_value > 0 else 0,
+        }
+
+        bowling_agg = bowling_qs.aggregate(
+            innings=Count("id"),
+            total_wickets=Sum("wickets"),
+            total_runs_given=Sum("runs_given"),
+            total_wides=Sum("wides"),
+            total_noballs=Sum("noballs"),
+            best_wickets=Max("wickets"),
+        )
+
+        total_wickets_value = bowling_agg["total_wickets"] or 0
+        total_runs_given_value = bowling_agg["total_runs_given"] or 0
+
+        bowling = {
+            "innings": bowling_agg["innings"] or 0,
+            "wickets": total_wickets_value,
+            "runs_given": total_runs_given_value,
+            "wides": bowling_agg["total_wides"] or 0,
+            "noballs": bowling_agg["total_noballs"] or 0,
+            "best_wickets": bowling_agg["best_wickets"] or 0,
+            "bowling_average": round(total_runs_given_value / total_wickets_value, 2) if total_wickets_value > 0 else None,
+        }
+
+        data = {
+            "player_id": player.player_id,
+            "player_name": player.player_name,
+            "country": player.country,
+            "role": player.role,
+            "ipl_debut": player.ipl_debut,
+            "last_season": player.last_season,
+            "current_team": current_team,
+            "teams_played_for": teams_played_for,
+            "total_matches": total_matches,
+            "matches_in_2026": matches_in_2026,
+            "last_match_played": last_match_played,
+            "batting": batting,
+            "bowling": bowling,
+            "situation_stats": list(situation_qs),
+            "recent_matches": recent_matches,
+        }
+        return Response(data)
 @extend_schema_view(
     list=extend_schema(tags=["Players"]),
     retrieve=extend_schema(tags=["Players"]),
@@ -613,7 +821,6 @@ class PlayerViewSet(viewsets.ModelViewSet):
     partial_update=extend_schema(tags=["Players"]),
     destroy=extend_schema(tags=["Players"]),
 )
-
 class PlayerIPLTeamViewSet(viewsets.ModelViewSet):
     queryset = PlayerIPLTeam.objects.select_related("player").all().order_by("-season", "team_name")
     serializer_class = PlayerIPLTeamSerializer
@@ -621,6 +828,7 @@ class PlayerIPLTeamViewSet(viewsets.ModelViewSet):
     filterset_fields = ["season", "team_name", "team_short", "is_current", "player"]
     search_fields = ["team_name", "team_short", "player__player_name", "player__player_id"]
     ordering_fields = ["season", "team_name"]
+
 
 @extend_schema_view(
     list=extend_schema(tags=["Players"]),
@@ -634,24 +842,28 @@ class IPLMatchViewSet(viewsets.ModelViewSet):
     queryset = IPLMatch.objects.all().order_by("-match_date", "match_number")
     serializer_class = IPLMatchSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+
     filterset_fields = [
         "season",
         "match_date",
-        "team_home",
-        "team_away",
-        "winner",
+        "team1",
+        "team2",
+        "toss_winner",
+        "toss_decision",
         "venue",
-        "city",
+        "status",
     ]
+
     search_fields = [
         "match_id",
-        "team_home",
-        "team_away",
-        "winner",
+        "team1",
+        "team2",
+        "toss_winner",
+        "toss_decision",
         "venue",
-        "city",
-        "player_of_match",
+        "status",
     ]
+
     ordering_fields = ["match_date", "season", "match_number"]
 
 
@@ -663,21 +875,26 @@ class IPLMatchViewSet(viewsets.ModelViewSet):
     partial_update=extend_schema(tags=["Players"]),
     destroy=extend_schema(tags=["Players"]),
 )
-
 class MatchPlayerViewSet(viewsets.ModelViewSet):
     queryset = MatchPlayer.objects.select_related("match", "player").all().order_by("match__match_date")
     serializer_class = MatchPlayerSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["match", "player", "team_name", "batting_position"]
+
+    filterset_fields = [
+        "match",
+        "player",
+    ]
+
     search_fields = [
-        "team_name",
         "player__player_name",
         "player__player_id",
         "match__match_id",
-        "match__team_home",
-        "match__team_away",
+        "match__team1",
+        "match__team2",
     ]
-    ordering_fields = ["batting_position", "match__match_date"]
+
+    ordering_fields = ["match__match_date"]
+
 
 @extend_schema_view(
     list=extend_schema(tags=["Players"]),
@@ -689,22 +906,25 @@ class MatchPlayerViewSet(viewsets.ModelViewSet):
 )
 class DeliveryViewSet(viewsets.ModelViewSet):
     queryset = Delivery.objects.select_related(
-        "match", "batter", "bowler", "non_striker", "player_out"
-    ).all().order_by("match", "innings", "over_number", "ball_number", "delivery_id")
+        "match",
+        "batter",
+        "bowler",
+        "non_striker",
+        "player_out",
+    ).all().order_by("match_id", "innings", "over_number", "ball_number", "id")
+
     serializer_class = DeliverySerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
         "match",
+        "match_id",
         "innings",
         "over_number",
         "ball_number",
         "batter",
         "bowler",
-        "non_striker",
         "player_out",
         "is_wicket",
         "extra_type",
-        "wicket_kind",
     ]
     search_fields = [
         "match__match_id",
@@ -712,8 +932,9 @@ class DeliveryViewSet(viewsets.ModelViewSet):
         "bowler__player_name",
         "non_striker__player_name",
         "player_out__player_name",
+        "wicket_kind",
     ]
-    ordering_fields = ["innings", "over_number", "ball_number", "delivery_id"]
+    ordering_fields = ["innings", "over_number", "ball_number", "id"]
 
 @extend_schema_view(
     list=extend_schema(tags=["Players"]),
@@ -727,22 +948,26 @@ class PlayerMatchBattingViewSet(viewsets.ModelViewSet):
     queryset = PlayerMatchBatting.objects.select_related("match", "player").all().order_by("-runs")
     serializer_class = PlayerMatchBattingSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+
     filterset_fields = [
         "match",
         "player",
         "innings",
         "is_not_out",
         "dismissal_kind",
-        "batting_position",
     ]
+
     search_fields = [
         "player__player_name",
         "player__player_id",
         "match__match_id",
-        "match__team_home",
-        "match__team_away",
+        "match__team1",
+        "match__team2",
     ]
-    ordering_fields = ["runs", "balls_faced", "strike_rate", "batting_position"]
+
+    ordering_fields = ["runs", "balls_faced", "strike_rate"]
+
+
 @extend_schema_view(
     list=extend_schema(tags=["Players"]),
     retrieve=extend_schema(tags=["Players"]),
@@ -751,7 +976,6 @@ class PlayerMatchBattingViewSet(viewsets.ModelViewSet):
     partial_update=extend_schema(tags=["Players"]),
     destroy=extend_schema(tags=["Players"]),
 )
-
 class PlayerMatchBowlingViewSet(viewsets.ModelViewSet):
     queryset = PlayerMatchBowling.objects.select_related("match", "player").all().order_by("-wickets")
     serializer_class = PlayerMatchBowlingSerializer
@@ -769,6 +993,8 @@ class PlayerMatchBowlingViewSet(viewsets.ModelViewSet):
         "match__team_away",
     ]
     ordering_fields = ["wickets", "economy", "runs_given", "overs_bowled"]
+
+
 @extend_schema_view(
     list=extend_schema(tags=["Players"]),
     retrieve=extend_schema(tags=["Players"]),
@@ -777,7 +1003,6 @@ class PlayerMatchBowlingViewSet(viewsets.ModelViewSet):
     partial_update=extend_schema(tags=["Players"]),
     destroy=extend_schema(tags=["Players"]),
 )
-
 class PlayerSituationStatsViewSet(viewsets.ModelViewSet):
     queryset = PlayerSituationStats.objects.select_related("player").all().order_by("player__player_name")
     serializer_class = PlayerSituationStatsSerializer

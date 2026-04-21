@@ -14,7 +14,14 @@ r = redis.Redis(
     decode_responses=True,
 )
 
-WS_URL_TEMPLATE = "wss://sr-socket.myzosh.com:8881?token={{agent_code}}-{{timestamp}}"
+# Keep your real websocket URL here.
+# If token is already full, use this format.
+WS_HOSTS = [
+    "socket.myzosh.com:443",
+    "socket.myzosh.com:8881",
+]
+WS_URL_TEMPLATE = "wss://{host}?token={token}"
+
 HEARTBEAT_INTERVAL = 10
 
 
@@ -22,7 +29,10 @@ def make_price_key(market_id, runner_id):
     return f"price:{market_id}:{runner_id}"
 
 
-def save_latest_price(market_id, runner_id, ltp, tv=None):
+def save_latest_price(market_id, runner_id, ltp, tv=None, extra_data=None):
+    """
+    Save latest price into Redis hash.
+    """
     key = make_price_key(market_id, runner_id)
     old = r.hgetall(key)
 
@@ -38,6 +48,10 @@ def save_latest_price(market_id, runner_id, ltp, tv=None):
         "tv": str(tv or 0),
         "updated_at": str(time.time()),
     }
+
+    if extra_data:
+        for k, v in extra_data.items():
+            payload[str(k)] = "" if v is None else str(v)
 
     r.hset(key, mapping=payload)
     print(f"[MarketWS] SAVED TO REDIS => {key} => {payload}")
@@ -60,10 +74,22 @@ def parse_market_message(message: str):
         return
 
     for market in payload.get("data", []):
-        market_id = market.get("mi")
+        bmi = market.get("bmi")   # Example: 1.256693299
+        mi = market.get("mi")     # Example: 1640194
         ltp_list = market.get("ltp", [])
 
-        print(f"[MarketWS] market_id={market_id}, ltp_count={len(ltp_list)}")
+        # IMPORTANT:
+        # Use BMI as primary market_id because your predictor / signal loop uses that.
+        primary_market_id = bmi if bmi is not None else mi
+
+        print(
+            f"[MarketWS] bmi={bmi}, mi={mi}, primary_market_id={primary_market_id}, "
+            f"ltp_count={len(ltp_list)}"
+        )
+
+        if primary_market_id is None:
+            print("[MarketWS] No usable market id found, skipping market")
+            continue
 
         for item in ltp_list:
             runner_id = item.get("ri")
@@ -72,11 +98,35 @@ def parse_market_message(message: str):
 
             print(f"[MarketWS] runner_id={runner_id}, ltp={ltp}, tv={tv}")
 
-            if market_id is None or runner_id is None or ltp is None:
-                print("[MarketWS] Invalid row, skipping")
+            if runner_id is None or ltp is None:
+                print("[MarketWS] Invalid runner row, skipping")
                 continue
 
-            save_latest_price(market_id, runner_id, ltp, tv)
+            extra_data = {
+                "bmi": bmi,
+                "mi": mi,
+                "source": "market_ws",
+            }
+
+            # Save using BMI as primary key
+            save_latest_price(
+                market_id=primary_market_id,
+                runner_id=runner_id,
+                ltp=ltp,
+                tv=tv,
+                extra_data=extra_data,
+            )
+
+            # Optional compatibility save using MI also
+            # This helps if any old code still reads using mi
+            if mi is not None and str(mi) != str(primary_market_id):
+                save_latest_price(
+                    market_id=mi,
+                    runner_id=runner_id,
+                    ltp=ltp,
+                    tv=tv,
+                    extra_data=extra_data,
+                )
 
 
 class MarketWebSocketClient:
@@ -122,22 +172,37 @@ class MarketWebSocketClient:
                 print("[MarketWS] HEARTBEAT ERROR:", repr(e))
             time.sleep(HEARTBEAT_INTERVAL)
 
+    def build_urls(self):
+        return [WS_URL_TEMPLATE.format(host=host, token=self.token) for host in WS_HOSTS]
+
     def run(self):
-        url = WS_URL_TEMPLATE.format(token=self.token)
-        print("[MarketWS] CONNECTING URL:", url)
+        urls = self.build_urls()
         print("[MarketWS] MARKET IDS:", self.market_ids)
 
-        self.ws = websocket.WebSocketApp(
-            url,
-            on_open=self.on_open,
-            on_message=self.on_message,
-            on_error=self.on_error,
-            on_close=self.on_close,
-            on_pong=self.on_pong,
-        )
+        last_error = None
+        for url in urls:
+            print("[MarketWS] CONNECTING URL:", url)
+            self.ws = websocket.WebSocketApp(
+                url,
+                on_open=self.on_open,
+                on_message=self.on_message,
+                on_error=self.on_error,
+                on_close=self.on_close,
+                on_pong=self.on_pong,
+            )
 
-        self.ws.run_forever(
-            sslopt={"check_hostname": False},
-            ping_interval=20,
-            ping_timeout=10,
-        )
+            try:
+                self.ws.run_forever(
+                    sslopt={"check_hostname": False},
+                    ping_interval=20,
+                    ping_timeout=10,
+                )
+                return
+            except Exception as e:
+                last_error = e
+                print(f"[MarketWS] CONNECT ERROR TYPE: {type(e).__name__}")
+                print(f"[MarketWS] CONNECT ERROR DETAIL: {e}")
+                print("[MarketWS] Trying next endpoint if available...")
+
+        if last_error:
+            raise last_error

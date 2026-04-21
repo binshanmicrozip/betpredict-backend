@@ -69,74 +69,193 @@ class FeatureVectorAdmin(admin.ModelAdmin):
 
 @admin.register(Pattern)
 class PatternAdmin(admin.ModelAdmin):
-    list_display = [field.name for field in Pattern._meta.fields]
-    list_filter = ('label',)
-    list_per_page = 50
+    list_display = (
+        "id",
+        "market",
+        "runner",
+        "runner_name",
+        "pattern_type",
+        "label",
+        "tick_count",
+        "market_time",
+        "created_at",
+    )
+    search_fields = (
+        "runner_name",
+        "event_name",
+        "winner",
+        "pattern_type",
+        "label",
+    )
+    list_filter = (
+        "label",
+        "pattern_type",
+        "runner_won",
+    )
+
+
+from .models import (
+    Player,
+    IPLMatch,
+    MatchPlayer,
+    Delivery,
+    PlayerMatchBatting,
+    PlayerMatchBowling,
+    PlayerSituationStats,
+)
 
 
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
-    list_display = ("player_id", "player_name", "role", "nationality", "ipl_debut", "last_season")
-    search_fields = ("player_id", "player_name")
-
-
-@admin.register(PlayerIPLTeam)
-class PlayerIPLTeamAdmin(admin.ModelAdmin):
-    list_display = ("player", "team_name", "team_short", "season", "is_current")
-    list_filter = ("season", "team_name", "is_current")
-    search_fields = ("player__player_name", "team_name")
+    list_display = (
+        "player_id",
+        "player_name",
+        "normalized_name",
+        "country",
+        "role",
+        "debut_year",
+        "last_season",
+    )
+    search_fields = (
+        "player_id",
+        "player_name",
+        "normalized_name",
+        "country",
+        "role",
+        "cricbuzz_profile_id",
+    )
+    list_filter = ("role", "country", "debut_year", "last_season")
+    ordering = ("player_name",)
 
 
 @admin.register(IPLMatch)
 class IPLMatchAdmin(admin.ModelAdmin):
-    list_display = ("match_id", "season", "match_number", "match_date", "team_home", "team_away", "winner")
+    list_display = (
+        "match_id",
+        "season",
+        "match_date",
+    )
+    search_fields = ("match_id",)
     list_filter = ("season", "match_date")
-    search_fields = ("match_id", "team_home", "team_away", "venue", "city")
+    ordering = ("-match_date", "-season")
 
 
 @admin.register(MatchPlayer)
 class MatchPlayerAdmin(admin.ModelAdmin):
-    list_display = ("match", "player", "team_name", "batting_position")
-    list_filter = ("team_name",)
-    search_fields = ("player__player_name", "match__match_id")
+    list_display = (
+        "id",
+        "match",
+        "player",
+    )
+    search_fields = (
+        "match__match_id",
+        "player__player_name",
+        "player__normalized_name",
+    )
+    list_filter = ("match__season",)
+    ordering = ("match", "player")
 
 
 @admin.register(Delivery)
 class DeliveryAdmin(admin.ModelAdmin):
     list_display = (
-        "delivery_id", "match", "innings", "over_number", "ball_number",
-        "batter", "bowler", "runs_total", "is_wicket", "wicket_kind"
+        "id",
+        "match",
+        "innings",
+        "over_number",
+        "ball_number",
+        "batter",
+        "bowler",
+        "runs_batter",
+        "runs_extras",
+        "runs_total",
+        "is_wicket",
+        "wicket_kind",
     )
-    list_filter = ("innings", "is_wicket", "extra_type")
-    search_fields = ("match__match_id", "batter__player_name", "bowler__player_name")
+    search_fields = (
+        "match__match_id",
+        "batter__player_name",
+        "bowler__player_name",
+        "non_striker__player_name",
+        "player_out__player_name",
+        "wicket_kind",
+    )
+    list_filter = (
+        "innings",
+        "is_wicket",
+        "extra_type",
+        "match__season",
+    )
+    ordering = ("match_id", "innings", "over_number", "ball_number", "id")
 
 
 @admin.register(PlayerMatchBatting)
 class PlayerMatchBattingAdmin(admin.ModelAdmin):
     list_display = (
-        "match", "player", "innings", "runs", "balls_faced",
-        "fours", "sixes", "strike_rate", "dismissal_kind", "is_not_out"
+        "id",
+        "match",
+        "player",
+        "innings",
+        "runs",
+        "balls_faced",
+        "fours",
+        "sixes",
+        "strike_rate",
+        "dismissal_kind",
+        "is_not_out",
     )
-    list_filter = ("innings", "is_not_out")
-    search_fields = ("match__match_id", "player__player_name")
+    search_fields = (
+        "match__match_id",
+        "player__player_name",
+        "player__normalized_name",
+    )
+    list_filter = ("innings", "is_not_out", "match__season")
+    ordering = ("match", "innings", "player")
 
 
 @admin.register(PlayerMatchBowling)
 class PlayerMatchBowlingAdmin(admin.ModelAdmin):
     list_display = (
-        "match", "player", "innings", "overs_bowled",
-        "runs_given", "wickets", "economy", "wides", "noballs"
+        "id",
+        "match",
+        "player",
+        "innings",
+        "overs_bowled",
+        "balls_bowled_calc",
+        "runs_given",
+        "wickets",
+        "economy",
+        "wides",
+        "noballs",
     )
-    list_filter = ("innings",)
-    search_fields = ("match__match_id", "player__player_name")
+    search_fields = (
+        "match__match_id",
+        "player__player_name",
+        "player__normalized_name",
+    )
+    list_filter = ("innings", "match__season")
+    ordering = ("match", "innings", "player")
 
 
 @admin.register(PlayerSituationStats)
 class PlayerSituationStatsAdmin(admin.ModelAdmin):
     list_display = (
-        "player", "phase", "innings_type", "matches_played", "runs",
-        "balls", "strike_rate", "boundary_count", "boundary_pct",
-        "wickets_lost", "dismissal_rate"
+        "id",
+        "player",
+        "phase",
+        "innings_type",
+        "matches_played",
+        "runs",
+        "balls",
+        "strike_rate",
+        "boundary_count",
+        "boundary_pct",
+        "wickets_lost",
+        "dismissal_rate",
+    )
+    search_fields = (
+        "player__player_name",
+        "player__normalized_name",
     )
     list_filter = ("phase", "innings_type")
-    search_fields = ("player__player_name",)
+    ordering = ("player", "phase", "innings_type")

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,6 +23,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-e69(a^$_wo94x-f%-mlh0yncqd^3*hpb&47@4shx35@$f1i*bv'
+
+
+
+BETPREDICT_MODEL_PATH = os.path.join(BASE_DIR, "betapp", "betpredict_model.pkl")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

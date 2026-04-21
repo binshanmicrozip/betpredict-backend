@@ -1,0 +1,14 @@
+venv/
+.env
+
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+data/
+live_match_data/
+output/
+
+*.log
+*.msi
+.DS_Store
