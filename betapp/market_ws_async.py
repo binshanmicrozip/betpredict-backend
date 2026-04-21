@@ -17,7 +17,6 @@ r = redis.Redis(
     decode_responses=True,
 )
 
-# keep 443 first because 8881 is timing out on your machine
 WS_HOSTS = [
     "socket.myzosh.com:443",
     "socket.myzosh.com:8881",
@@ -53,11 +52,13 @@ class MarketWebSocketClient:
         save_db_without_cricket: bool = False,
         token_mode: str = "auto",   # auto | raw | agent
     ):
-        self.token_or_agent = token_or_agent.strip()
+        self.token_or_agent = (token_or_agent or "").strip()
         self.subscribe_markets_input = subscribe_markets or []
         self.save_db_without_cricket = save_db_without_cricket
         self.token_mode = token_mode
 
+        # IMPORTANT:
+        # Keep market ids exactly as strings.
         self.target_market_ids = [
             str(x).strip()
             for x in self.subscribe_markets_input
@@ -65,6 +66,11 @@ class MarketWebSocketClient:
         ]
 
         self.subscribe_markets = self.target_market_ids.copy()
+
+        if self.subscribe_markets:
+            print(f"[MarketWS] Exact market subscription requested: {self.subscribe_markets}")
+        else:
+            print("[MarketWS] No specific market ids passed. Will attempt ALL-MARKETS mode.")
 
         print(f"[MarketWS] TARGET MARKET IDS: {self.target_market_ids}")
         print(f"[MarketWS] FINAL SUBSCRIBE MARKETS: {self.subscribe_markets}")
@@ -86,7 +92,6 @@ class MarketWebSocketClient:
             return f"{self.token_or_agent}-{int(time.time() * 1000)}"
 
         # auto mode
-        # if user passes something that already looks like a token, use it as-is
         if "-" in self.token_or_agent and len(self.token_or_agent) > 10:
             return self.token_or_agent
 
@@ -269,7 +274,6 @@ class MarketWebSocketClient:
     async def process_market_message(self, raw_message: str):
         try:
             payload = json.loads(raw_message)
-            print("paylllllllllll:",payload)
         except Exception as e:
             print(f"[MarketWS] JSON parse error: {e}")
             print(raw_message)
@@ -312,6 +316,7 @@ class MarketWebSocketClient:
             if not market_id:
                 continue
 
+            # Only filter when explicit markets were passed.
             if self.target_market_ids and market_id not in self.target_market_ids:
                 print(f"[MarketWS] Skipping market_id={market_id} because it is not in target ids")
                 continue
@@ -443,6 +448,7 @@ class MarketWebSocketClient:
                         f"Keeping connection open and waiting..."
                     )
                     no_data_start = time.time()
+
     async def connect_once(self):
         urls = self.build_urls()
         print(f"[MarketWS] FINAL SUBSCRIBE MARKETS: {self.subscribe_markets}")
@@ -466,12 +472,16 @@ class MarketWebSocketClient:
 
                     subscribe_payload = {"action": "set"}
 
-                if self.subscribe_markets:
-                    subscribe_payload["markets"] = ",".join(self.subscribe_markets)
-                    print(f"[MarketWS] SENDING FILTERED SUBSCRIBE: {subscribe_payload}")
-                else:
-                    print("[MarketWS] SENDING GLOBAL SUBSCRIBE FOR ALL AVAILABLE MARKETS")
-                    print(f"[MarketWS] SENDING FILTERED SUBSCRIBE: {subscribe_payload}")
+                    # If specific markets are passed, subscribe to them.
+                    # If no markets are passed, try global mode.
+                    if self.subscribe_markets:
+                        subscribe_payload["markets"] = ",".join(self.subscribe_markets)
+                        print(f"[MarketWS] SENDING FILTERED SUBSCRIBE: {subscribe_payload}")
+                    else:
+                        print("[MarketWS] SENDING GLOBAL SUBSCRIBE FOR ALL AVAILABLE MARKETS")
+                        print("[MarketWS] WARNING: If provider does not support empty 'set', only heartbeat may come.")
+                        print(f"[MarketWS] SENDING GLOBAL SUBSCRIBE: {subscribe_payload}")
+
                     await ws.send(json.dumps(subscribe_payload))
                     print(f"[MarketWS] SUBSCRIBED: {subscribe_payload}")
 
