@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import json
 from pathlib import Path
 
@@ -115,12 +116,18 @@ class Command(BaseCommand):
                         non_striker = get_or_create_player(row['non_striker_name']) if row['non_striker_name'] else None
                         player_out = get_or_create_player(row['player_out_name']) if row['player_out_name'] else None
 
+                        innings_val = int(row['innings']) if row['innings'] else 1
+                        event_key = hashlib.md5(
+                            f"{source_match_id}|{innings_val}|{row['over_number']}|{row['ball_number']}|{row.get('commentary', '') or ''}".encode()
+                        ).hexdigest()
+
                         delivery, created = LiveDelivery.objects.update_or_create(
-                            match=match_obj,
-                            innings=int(row['innings']) if row['innings'] else 1,
-                            over_number=_parse_over(row['over_number']),
-                            ball_number=_parse_over(row['ball_number']),
+                            event_key=event_key,
                             defaults={
+                                "match": match_obj,
+                                "innings": innings_val,
+                                "over_number": _parse_over(row['over_number']),
+                                "ball_number": _parse_over(row['ball_number']),
                                 "batter": batter,
                                 "bowler": bowler,
                                 "non_striker": non_striker,
