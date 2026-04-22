@@ -467,7 +467,7 @@ import numpy as np
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "betpredict_model.pkl")
+MODEL_PATH = os.path.join(BASE_DIR, "pattern_model_v2.pkl")
 
 with open(MODEL_PATH, "rb") as f:
     pkg = pickle.load(f)

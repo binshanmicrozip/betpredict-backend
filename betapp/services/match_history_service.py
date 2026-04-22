@@ -5,7 +5,7 @@ from betapp.models import (
     Delivery,
     MatchPlayer,
     PlayerMatchBatting,
-    PlayerMatchBowling,
+    PlayerMatchBowling,Signal
  
 )
 from betapp.predictor import detect_pattern
