@@ -2,6 +2,24 @@ import csv
 import json
 from pathlib import Path
 
+
+def _parse_score(value):
+    if not value:
+        return 0
+    try:
+        return int(str(value).split('/')[0])
+    except Exception:
+        return 0
+
+
+def _parse_over(value):
+    if not value:
+        return 0
+    try:
+        return int(float(value))
+    except Exception:
+        return 0
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -68,8 +86,8 @@ class Command(BaseCommand):
                                 "innings": int(row['innings']) if row['innings'] else None,
                                 "batting_team": row['batting_team'],
                                 "bowling_team": row['bowling_team'],
-                                "score": int(row['score']) if row['score'] else 0,
-                                "wickets": int(row['wickets']) if row['wickets'] else 0,
+                                "score": _parse_score(row['score']),
+                                "wickets": _parse_score(row['wickets']),
                                 "overs": float(row['overs']) if row['overs'] else 0,
                                 "target": int(row['target']) if row['target'] else None,
                                 "current_run_rate": float(row['crr']) if row['crr'] else None,
@@ -100,8 +118,8 @@ class Command(BaseCommand):
                         delivery, created = LiveDelivery.objects.update_or_create(
                             match=match_obj,
                             innings=int(row['innings']) if row['innings'] else 1,
-                            over_number=int(row['over_number']),
-                            ball_number=int(row['ball_number']),
+                            over_number=_parse_over(row['over_number']),
+                            ball_number=_parse_over(row['ball_number']),
                             defaults={
                                 "batter": batter,
                                 "bowler": bowler,
