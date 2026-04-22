@@ -1,0 +1,3 @@
+from betapp.combined_csv_archive import CombinedCsvArchiveManager
+
+combined_csv_archive = CombinedCsvArchiveManager()
