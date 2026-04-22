@@ -12,3 +12,6 @@ output/
 *.log
 *.msi
 .DS_Store
+
+celerybeat-schedule
+live_csv_archive/
