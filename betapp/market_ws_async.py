@@ -1,7 +1,10 @@
+
 # import asyncio
 # import json
+# import re
 # import time
 # from decimal import Decimal, InvalidOperation
+# from datetime import datetime, timezone as dt_timezone
 
 # import redis
 # import websockets
@@ -44,36 +47,53 @@
 #         return None
 
 
+# def _parse_dotnet_date(value):
+#     if not value:
+#         return None
+
+#     text = str(value).strip()
+#     match = re.search(r"/Date\((\d+)\)/", text)
+#     if not match:
+#         return None
+
+#     try:
+#         ms = int(match.group(1))
+#         return datetime.fromtimestamp(ms / 1000, tz=dt_timezone.utc)
+#     except Exception:
+#         return None
+
+
 # class MarketWebSocketClient:
 #     def __init__(
 #         self,
 #         token_or_agent: str,
 #         subscribe_markets: list[str] | None = None,
+#         market_catalog: list[dict] | None = None,
 #         save_db_without_cricket: bool = False,
-#         token_mode: str = "auto",   # auto | raw | agent
+#         token_mode: str = "auto",
 #     ):
 #         self.token_or_agent = (token_or_agent or "").strip()
-#         self.subscribe_markets_input = subscribe_markets or []
 #         self.save_db_without_cricket = save_db_without_cricket
 #         self.token_mode = token_mode
 
-#         # IMPORTANT:
-#         # Keep market ids exactly as strings.
-#         self.target_market_ids = [
-#             str(x).strip()
-#             for x in self.subscribe_markets_input
-#             if str(x).strip()
-#         ]
+#         self.market_catalog = market_catalog or []
+#         self.market_metadata_by_id = {}
 
-#         self.subscribe_markets = self.target_market_ids.copy()
+#         for item in self.market_catalog:
+#             market_id = str(item.get("market_id") or "").strip()
+#             if market_id:
+#                 self.market_metadata_by_id[market_id] = item
 
-#         if self.subscribe_markets:
-#             print(f"[MarketWS] Exact market subscription requested: {self.subscribe_markets}")
+#         if subscribe_markets:
+#             self.subscribe_markets = [
+#                 str(x).strip()
+#                 for x in subscribe_markets
+#                 if str(x).strip()
+#             ]
 #         else:
-#             print("[MarketWS] No specific market ids passed. Will attempt ALL-MARKETS mode.")
+#             self.subscribe_markets = list(self.market_metadata_by_id.keys())
 
-#         print(f"[MarketWS] TARGET MARKET IDS: {self.target_market_ids}")
-#         print(f"[MarketWS] FINAL SUBSCRIBE MARKETS: {self.subscribe_markets}")
+#         print(f"[MarketWS] FINAL SUBSCRIBE MARKETS COUNT: {len(self.subscribe_markets)}")
 #         print(f"[MarketWS] TOKEN MODE: {self.token_mode}")
 
 #         self.ws = None
@@ -84,6 +104,8 @@
 #         self.last_non_heartbeat_ts = None
 #         self.last_saved_market_ts = None
 
+#         self._seed_market_catalog()
+
 #     def resolve_token(self):
 #         if self.token_mode == "raw":
 #             return self.token_or_agent
@@ -91,7 +113,6 @@
 #         if self.token_mode == "agent":
 #             return f"{self.token_or_agent}-{int(time.time() * 1000)}"
 
-#         # auto mode
 #         if "-" in self.token_or_agent and len(self.token_or_agent) > 10:
 #             return self.token_or_agent
 
@@ -116,6 +137,40 @@
 #                 print(f"[MarketWS] HEARTBEAT error: {e}")
 #                 break
 
+#     def _seed_market_catalog(self):
+#         if not self.market_catalog:
+#             print("[MarketWS] No market catalog provided for seeding")
+#             return
+
+#         print(f"[MarketWS] Seeding DB metadata for {len(self.market_catalog)} markets")
+
+#         for item in self.market_catalog:
+#             market_id = str(item.get("market_id") or "").strip()
+#             if not market_id:
+#                 continue
+
+#             market = self._get_or_create_market(
+#                 market_id=market_id,
+#                 event_id=item.get("event_id"),
+#                 event_type_id=item.get("sport_id"),
+#                 status=1,
+#                 traded_volume=None,
+#                 metadata=item,
+#             )
+#             if not market:
+#                 continue
+
+#             for runner_data in item.get("runners", []):
+#                 selection_id = _to_int(runner_data.get("selection_id"))
+#                 if selection_id is None:
+#                     continue
+
+#                 self._get_or_create_runner(
+#                     market=market,
+#                     selection_id=selection_id,
+#                     runner_data=runner_data,
+#                 )
+
 #     def _get_market(self, market_id: str) -> Market | None:
 #         if market_id in self.market_cache:
 #             return self.market_cache[market_id]
@@ -131,68 +186,99 @@
 #         event_type_id: str | None = None,
 #         status: int | None = None,
 #         traded_volume: Decimal | None = None,
+#         metadata: dict | None = None,
 #     ) -> Market | None:
-#         if market_id in self.market_cache:
-#             return self.market_cache[market_id]
+#         if metadata is None:
+#             metadata = self.market_metadata_by_id.get(str(market_id), {})
 
-#         market, created = Market.objects.get_or_create(
+#         existing = self._get_market(market_id)
+#         market_start_time = _parse_dotnet_date(metadata.get("market_time_raw")) or timezone.now()
+#         suspend_time = _parse_dotnet_date(metadata.get("suspend_time_raw"))
+
+#         defaults = {
+#             "event_id": str(metadata.get("event_id") or event_id or market_id),
+#             "event_name": metadata.get("event_name") or f"Event {market_id}",
+#             "market_name": metadata.get("market_name") or f"Market {market_id}",
+#             "market_type": metadata.get("market_type") or "MATCH_ODDS",
+#             "event_type_id": str(metadata.get("sport_id") or event_type_id or "4"),
+#             "country_code": metadata.get("country_code"),
+#             "timezone": metadata.get("timezone") or "UTC",
+#             "market_start_time": market_start_time,
+#             "suspend_time": suspend_time,
+#             "status": "OPEN" if status != 0 else "CLOSED",
+#             "turn_in_play_enabled": bool(metadata.get("is_turn_in_play_enabled")),
+#             "persistence_enabled": bool(metadata.get("is_persistence_enabled")),
+#             "bsp_market": bool(metadata.get("is_bsp_market")),
+#             "market_base_rate": _to_decimal(metadata.get("market_base_rate")),
+#             "regulators": metadata.get("regulator"),
+#             "number_of_active_runners": len(metadata.get("runners") or []),
+#         }
+
+#         if existing:
+#             changed = False
+#             for field, value in defaults.items():
+#                 current = getattr(existing, field, None)
+#                 if (current in (None, "", 0) and value not in (None, "")) or field in {
+#                     "event_name", "market_name", "market_type", "country_code", "timezone",
+#                     "turn_in_play_enabled", "persistence_enabled", "bsp_market",
+#                     "number_of_active_runners", "status"
+#                 }:
+#                     if current != value and value is not None:
+#                         setattr(existing, field, value)
+#                         changed = True
+
+#             if changed:
+#                 existing.save()
+#             self.market_cache[market_id] = existing
+#             return existing
+
+#         market = Market.objects.create(
 #             market_id=market_id,
-#             defaults={
-#                 "event_id": event_id or market_id,
-#                 "event_name": f"Event {market_id}",
-#                 "event_type_id": event_type_id or "4",
-#                 "market_name": f"Market {market_id}",
-#                 "market_type": "MATCH_ODDS",
-#                 "market_start_time": timezone.now(),
-#                 "status": "OPEN" if status != 0 else "CLOSED",
-#                 "country_code": None,
-#                 "timezone": "UTC",
-#             }
+#             **defaults,
 #         )
-
 #         self.market_cache[market_id] = market
 #         return market
 
-#     def _get_or_create_runner(self, market: Market, selection_id: int) -> Runner | None:
+#     def _get_or_create_runner(
+#         self,
+#         market: Market,
+#         selection_id: int,
+#         runner_data: dict | None = None,
+#     ) -> Runner | None:
 #         key = (market.market_id, selection_id)
 #         if key in self.runner_cache:
-#             return self.runner_cache[key]
-
-#         runner, _ = Runner.objects.get_or_create(
-#             market=market,
-#             selection_id=selection_id,
-#             defaults={
-#                 "runner_name": f"Runner {selection_id}",
-#                 "status": "ACTIVE",
-#             }
-#         )
-#         self.runner_cache[key] = runner
-#         return runner
-
-#     def _get_runner(self, market: Market, selection_id: int) -> Runner | None:
-#         key = (market.market_id, selection_id)
-#         if key in self.runner_cache:
-#             return self.runner_cache[key]
+#             runner = self.runner_cache[key]
+#             if runner and runner_data:
+#                 proper_name = runner_data.get("runner_name")
+#                 if proper_name and runner.runner_name != proper_name:
+#                     runner.runner_name = proper_name
+#                     runner.save()
+#             return runner
 
 #         runner = Runner.objects.filter(market=market, selection_id=selection_id).first()
+#         if runner:
+#             proper_name = (runner_data or {}).get("runner_name")
+#             if proper_name and runner.runner_name != proper_name:
+#                 runner.runner_name = proper_name
+#                 runner.save()
+
+#             self.runner_cache[key] = runner
+#             return runner
+
+#         runner_name = (runner_data or {}).get("runner_name") or f"Runner {selection_id}"
+#         runner = Runner.objects.create(
+#             market=market,
+#             selection_id=selection_id,
+#             runner_name=runner_name,
+#             status="ACTIVE",
+#         )
 #         self.runner_cache[key] = runner
 #         return runner
 
 #     def _has_live_cricket_data(self, market_id: str) -> bool:
-#         from pathlib import Path
-
 #         recent_cutoff = timezone.now() - timezone.timedelta(minutes=5)
 #         recent_live_matches = LiveMatchState.objects.filter(fetched_at__gte=recent_cutoff).exists()
-#         if recent_live_matches:
-#             return True
-
-#         csv_dir = Path("live_match_data")
-#         if csv_dir.exists():
-#             current_time = timezone.now()
-#             for csv_file in csv_dir.glob("live_match_*.csv"):
-#                 if csv_file.stat().st_mtime > (current_time - timezone.timedelta(minutes=5)).timestamp():
-#                     return True
-#         return False
+#         return recent_live_matches
 
 #     def _save_price_tick_to_db(self, market_id: str, selection_id: int, ltp: Decimal, traded_volume: Decimal | None, source: str):
 #         if not self.save_db_without_cricket and not self._has_live_cricket_data(market_id):
@@ -206,7 +292,7 @@
 #             print(f"[MarketWS] DB market not found: {market_id}")
 #             return
 
-#         runner = self._get_runner(market, selection_id)
+#         runner = self._get_or_create_runner(market, selection_id)
 #         if not runner:
 #             self.skipped_tick_count += 1
 #             print(f"[MarketWS] DB runner not found: market={market_id}, selection_id={selection_id}")
@@ -308,17 +394,13 @@
 #             rt_items = item.get("rt", []) or []
 
 #             market_id = bmi if bmi else mi
+#             metadata = self.market_metadata_by_id.get(market_id, {})
 
 #             print(f"[MarketWS] MARKET ITEM => mi={mi}, bmi={bmi}, market_id={market_id}, eid={eid}, eti={eti}, status={ms}")
 #             print(f"[MarketWS] LTP COUNT => {len(ltp_items)}")
 #             print(f"[MarketWS] RT COUNT => {len(rt_items)}")
 
 #             if not market_id:
-#                 continue
-
-#             # Only filter when explicit markets were passed.
-#             if self.target_market_ids and market_id not in self.target_market_ids:
-#                 print(f"[MarketWS] Skipping market_id={market_id} because it is not in target ids")
 #                 continue
 
 #             market = await asyncio.to_thread(
@@ -328,9 +410,16 @@
 #                 eti,
 #                 ms,
 #                 tdv,
+#                 metadata,
 #             )
 #             if not market:
 #                 continue
+
+#             runner_map = {
+#                 str(r.get("selection_id")): r
+#                 for r in metadata.get("runners", [])
+#                 if str(r.get("selection_id", "")).strip()
+#             }
 
 #             processed_runner_ids = set()
 
@@ -342,10 +431,12 @@
 #                 if runner_id is None or ltp_value is None:
 #                     continue
 
+#                 runner_data = runner_map.get(str(runner_id), {})
 #                 runner = await asyncio.to_thread(
 #                     self._get_or_create_runner,
 #                     market,
 #                     runner_id,
+#                     runner_data,
 #                 )
 #                 if not runner:
 #                     continue
@@ -364,6 +455,14 @@
 #                         "tdv": tdv,
 #                         "message_type": message_type,
 #                         "source": "market_ws_async",
+#                         "event_name": metadata.get("event_name"),
+#                         "sport_id": metadata.get("sport_id"),
+#                         "sport_name": metadata.get("sport_name"),
+#                         "tournament_id": metadata.get("tournament_id"),
+#                         "tournament_name": metadata.get("tournament_name"),
+#                         "market_name": metadata.get("market_name"),
+#                         "market_type": metadata.get("market_type"),
+#                         "runner_name": runner.runner_name,
 #                     },
 #                 )
 
@@ -387,10 +486,12 @@
 #                 if ltp_value is None:
 #                     continue
 
+#                 runner_data = runner_map.get(str(runner_id), {})
 #                 runner = await asyncio.to_thread(
 #                     self._get_or_create_runner,
 #                     market,
 #                     runner_id,
+#                     runner_data,
 #                 )
 #                 if not runner:
 #                     continue
@@ -409,6 +510,14 @@
 #                         "tdv": tdv,
 #                         "message_type": message_type,
 #                         "source": "market_ws_async_rt_fallback",
+#                         "event_name": metadata.get("event_name"),
+#                         "sport_id": metadata.get("sport_id"),
+#                         "sport_name": metadata.get("sport_name"),
+#                         "tournament_id": metadata.get("tournament_id"),
+#                         "tournament_name": metadata.get("tournament_name"),
+#                         "market_name": metadata.get("market_name"),
+#                         "market_type": metadata.get("market_type"),
+#                         "runner_name": runner.runner_name,
 #                     },
 #                 )
 
@@ -443,15 +552,15 @@
 #                     print("[MarketWS] No Redis save has happened yet in this session")
 
 #                 if elapsed >= NO_MARKET_DATA_FAILOVER_SECONDS:
-#                     print(
-#                         f"[MarketWS] No market packets yet for {elapsed}s. "
-#                         f"Keeping connection open and waiting..."
-#                     )
+#                     print(f"[MarketWS] No market packets yet for {elapsed}s. Keeping connection open and waiting...")
 #                     no_data_start = time.time()
 
 #     async def connect_once(self):
 #         urls = self.build_urls()
-#         print(f"[MarketWS] FINAL SUBSCRIBE MARKETS: {self.subscribe_markets}")
+#         print(f"[MarketWS] FINAL SUBSCRIBE MARKETS COUNT: {len(self.subscribe_markets)}")
+
+#         if not self.subscribe_markets:
+#             raise Exception("No market ids available for subscription")
 
 #         last_error = None
 #         for url in urls:
@@ -470,20 +579,14 @@
 
 #                     asyncio.create_task(self.heartbeat())
 
-#                     subscribe_payload = {"action": "set"}
+#                     subscribe_payload = {
+#                         "action": "set",
+#                         "markets": ",".join(self.subscribe_markets),
+#                     }
 
-#                     # If specific markets are passed, subscribe to them.
-#                     # If no markets are passed, try global mode.
-#                     if self.subscribe_markets:
-#                         subscribe_payload["markets"] = ",".join(self.subscribe_markets)
-#                         print(f"[MarketWS] SENDING FILTERED SUBSCRIBE: {subscribe_payload}")
-#                     else:
-#                         print("[MarketWS] SENDING GLOBAL SUBSCRIBE FOR ALL AVAILABLE MARKETS")
-#                         print("[MarketWS] WARNING: If provider does not support empty 'set', only heartbeat may come.")
-#                         print(f"[MarketWS] SENDING GLOBAL SUBSCRIBE: {subscribe_payload}")
-
+#                     print(f"[MarketWS] SENDING SUBSCRIBE WITH {len(self.subscribe_markets)} MARKET IDS")
 #                     await ws.send(json.dumps(subscribe_payload))
-#                     print(f"[MarketWS] SUBSCRIBED: {subscribe_payload}")
+#                     print("[MarketWS] SUBSCRIBED SUCCESSFULLY")
 
 #                     try:
 #                         first_message = await asyncio.wait_for(ws.recv(), timeout=5)
@@ -773,7 +876,14 @@ class MarketWebSocketClient:
 
         runner = Runner.objects.filter(market=market, selection_id=selection_id).first()
         if runner:
-            proper_name = (runner_data or {}).get("runner_name")
+            proper_name = (runner_data or {}).get("runner_name") or ""
+            if not proper_name or proper_name.startswith("Runner "):
+                # Catalog had no name — try any other Runner record with a real name
+                other = Runner.objects.filter(
+                    selection_id=selection_id
+                ).exclude(runner_name__startswith="Runner ").first()
+                proper_name = other.runner_name if other else ""
+
             if proper_name and runner.runner_name != proper_name:
                 runner.runner_name = proper_name
                 runner.save()
@@ -781,11 +891,18 @@ class MarketWebSocketClient:
             self.runner_cache[key] = runner
             return runner
 
-        runner_name = (runner_data or {}).get("runner_name") or f"Runner {selection_id}"
+        catalog_name = (runner_data or {}).get("runner_name") or ""
+        if not catalog_name or catalog_name.startswith("Runner "):
+            # Try to find a proper name from any other Runner record with the same selection_id
+            other = Runner.objects.filter(
+                selection_id=selection_id
+            ).exclude(runner_name__startswith="Runner ").first()
+            catalog_name = other.runner_name if other else f"Runner {selection_id}"
+
         runner = Runner.objects.create(
             market=market,
             selection_id=selection_id,
-            runner_name=runner_name,
+            runner_name=catalog_name,
             status="ACTIVE",
         )
         self.runner_cache[key] = runner
@@ -905,6 +1022,9 @@ class MarketWebSocketClient:
             eti = str(item.get("eti") or "4").strip()
             ms = _to_int(item.get("ms"))
             tdv = _to_decimal(item.get("tdv", 0))
+            # "ip" field is the actual in-play flag (1=inplay); ms==2 is Betfair's inplay status
+            ip = _to_int(item.get("ip", 0))
+            in_play = (ms == 2) or bool(ip)
 
             ltp_items = item.get("ltp", []) or []
             rt_items = item.get("rt", []) or []
@@ -912,7 +1032,7 @@ class MarketWebSocketClient:
             market_id = bmi if bmi else mi
             metadata = self.market_metadata_by_id.get(market_id, {})
 
-            print(f"[MarketWS] MARKET ITEM => mi={mi}, bmi={bmi}, market_id={market_id}, eid={eid}, eti={eti}, status={ms}")
+            print(f"[MarketWS] MARKET ITEM => mi={mi}, bmi={bmi}, market_id={market_id}, eid={eid}, eti={eti}, status={ms}, ip={ip}, in_play={in_play}")
             print(f"[MarketWS] LTP COUNT => {len(ltp_items)}")
             print(f"[MarketWS] RT COUNT => {len(rt_items)}")
 
@@ -968,6 +1088,7 @@ class MarketWebSocketClient:
                         "eid": eid,
                         "eti": eti,
                         "market_status": ms,
+                        "in_play": "1" if in_play else "0",
                         "tdv": tdv,
                         "message_type": message_type,
                         "source": "market_ws_async",
@@ -1023,6 +1144,7 @@ class MarketWebSocketClient:
                         "eid": eid,
                         "eti": eti,
                         "market_status": ms,
+                        "in_play": "1" if in_play else "0",
                         "tdv": tdv,
                         "message_type": message_type,
                         "source": "market_ws_async_rt_fallback",

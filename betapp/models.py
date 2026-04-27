@@ -328,6 +328,27 @@ class Player(models.Model):
         return self.player_name
 
 
+# class IPLMatch(models.Model):
+#     match_id = models.CharField(primary_key=True, max_length=100)
+#     season = models.PositiveIntegerField(db_index=True)
+#     match_date = models.DateField(blank=True, null=True)
+#     match_number = models.PositiveIntegerField(blank=True, null=True)
+
+#     team1 = models.CharField(max_length=255, blank=True, null=True)
+#     team2 = models.CharField(max_length=255, blank=True, null=True)
+
+#     toss_winner = models.CharField(max_length=255, blank=True, null=True)
+#     toss_decision = models.CharField(max_length=50, blank=True, null=True)
+
+#     venue = models.CharField(max_length=255, blank=True, null=True)
+#     status = models.CharField(max_length=255, blank=True, null=True)
+
+#     class Meta:
+#         db_table = "ipl_matches"
+
+#     def __str__(self):
+#         return str(self.match_id)
+
 class IPLMatch(models.Model):
     match_id = models.CharField(primary_key=True, max_length=100)
     season = models.PositiveIntegerField(db_index=True)
@@ -342,6 +363,24 @@ class IPLMatch(models.Model):
 
     venue = models.CharField(max_length=255, blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True)
+
+    match_name = models.CharField(max_length=255, blank=True, null=True)
+    open_date = models.CharField(max_length=100, blank=True, null=True)
+    open_date_time = models.DateTimeField(blank=True, null=True, db_index=True)
+    market_id = models.CharField(max_length=50, blank=True, null=True, db_index=True)
+
+    # ── RESULT FIELDS ─────────────────────────────────────────────────────────
+    is_complete = models.BooleanField(default=False, db_index=True)
+    winner = models.CharField(max_length=255, blank=True, null=True)
+    winning_margin = models.CharField(max_length=255, blank=True, null=True)
+    result_summary = models.TextField(blank=True, null=True)
+    team1_score = models.CharField(max_length=100, blank=True, null=True)
+    team2_score = models.CharField(max_length=100, blank=True, null=True)
+    player_of_match = models.CharField(max_length=255, blank=True, null=True)
+    result_updated_at = models.DateTimeField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         db_table = "ipl_matches"

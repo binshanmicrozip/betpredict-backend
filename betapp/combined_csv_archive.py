@@ -157,6 +157,8 @@ class CombinedCsvArchiveManager:
             "price_json",
             "prediction_json",
             "raw_json",
+            "runner_name",
+            "event_name",
         ]
 
         row = {
@@ -227,6 +229,8 @@ class CombinedCsvArchiveManager:
             "price_json": safe_json(price),
             "prediction_json": safe_json(prediction),
             "raw_json": safe_json(raw_json),
+            "runner_name": price.get("runner_name") or "",
+            "event_name": price.get("event_name") or "",
         }
 
         self.append_row(file_path, fieldnames, row)

@@ -1086,3 +1086,426 @@ class LiveDeliveryViewSet(viewsets.ReadOnlyModelViewSet):
 
         data = qs.order_by("-updated_at", "-live_delivery_id")[:20]
         return Response(self.get_serializer(data, many=True).data)
+
+def safe_json(value):
+    if not value:
+        return {}
+
+    try:
+        return json.loads(value)
+    except Exception:
+        return {}
+
+
+def safe_float(value):
+    if value in ["", None]:
+        return None
+
+    try:
+        return float(value)
+    except Exception:
+        return None
+
+
+def safe_int(value):
+    if value in ["", None]:
+        return None
+
+    try:
+        return int(float(value))
+    except Exception:
+        return None
+
+
+import csv
+import json
+from pathlib import Path
+from collections import OrderedDict
+
+from django.conf import settings
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+
+def safe_json(value):
+    if not value:
+        return {}
+
+    if isinstance(value, dict):
+        return value
+
+    try:
+        return json.loads(value)
+    except Exception:
+        return {}
+
+
+def safe_int(value):
+    if value in [None, "", "null", "None"]:
+        return None
+    try:
+        return int(float(value))
+    except Exception:
+        return None
+
+
+def safe_float(value):
+    if value in [None, "", "null", "None"]:
+        return None
+    try:
+        return float(value)
+    except Exception:
+        return None
+
+
+def get_runner_name_from_price_json(price_json, runner_id):
+    """Match runner_name from price_json.runners[] by selection_id"""
+    for runner in price_json.get("runners", []):
+        if str(runner.get("selection_id")) == str(runner_id):
+            return runner.get("runner_name")
+    return None
+
+import csv
+import json
+from pathlib import Path
+from collections import OrderedDict
+
+import requests
+from django.conf import settings
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+
+def safe_json(value):
+    if not value:
+        return {}
+    if isinstance(value, dict):
+        return value
+    try:
+        return json.loads(value)
+    except Exception:
+        return {}
+
+
+def safe_int(value):
+    if value in [None, "", "null", "None"]:
+        return None
+    try:
+        return int(float(value))
+    except Exception:
+        return None
+
+
+def safe_float(value):
+    if value in [None, "", "null", "None"]:
+        return None
+    try:
+        return float(value)
+    except Exception:
+        return None
+
+
+def fetch_market_runner_names(market_id):
+    """
+    Returns dict: { "22121561": "Delhi Capitals", "38528100": "Punjab Kings" }
+    Reads from DB Runner table first (reliable), falls back to external API.
+    """
+    from betapp.models import Runner as RunnerModel
+
+    runner_map = {}
+
+    # Primary: DB lookup — always up to date after run_market_ws seeds the catalog
+    try:
+        qs = RunnerModel.objects.filter(market_id=str(market_id)).values("selection_id", "runner_name")
+        for r in qs:
+            rid = str(r["selection_id"])
+            rname = (r["runner_name"] or "").strip()
+            if rname and not rname.startswith("Runner "):
+                runner_map[rid] = rname
+    except Exception as e:
+        print(f"[fetch_market_runner_names] DB lookup failed for market_id={market_id}: {e}")
+
+    if runner_map:
+        return runner_map
+
+    # Fallback: external API
+    try:
+        response = requests.get(
+            "https://staging.myzosh.com/api/get_exch_markets",
+            params={"market_id": market_id},
+            timeout=5,
+        )
+        data = response.json()
+        markets = data if isinstance(data, list) else data.get("markets") or data.get("results") or [data]
+        for market in markets:
+            if str(market.get("market_id")) == str(market_id):
+                for runner in market.get("runners", []):
+                    selection_id = str(runner.get("selection_id"))
+                    rname = runner.get("runner_name")
+                    if selection_id and rname:
+                        runner_map[selection_id] = rname
+                break
+    except Exception as e:
+        print(f"[fetch_market_runner_names] API fallback failed for market_id={market_id}: {e}")
+
+    return runner_map
+
+
+@api_view(["GET"])
+def match_csv_history(request):
+    """
+    API examples:
+
+    /api/match-csv-history/?source_match_id=151878
+    /api/match-csv-history/?market_id=1.257104784
+    /api/match-csv-history/?runner_id=2954263
+
+    Any one ID is enough.
+    """
+
+    source_match_id = request.GET.get("source_match_id")
+    market_id = request.GET.get("market_id")
+    runner_id = request.GET.get("runner_id")
+
+    if not source_match_id and not market_id and not runner_id:
+        return Response(
+            {"error": "Pass any one: source_match_id OR market_id OR runner_id"},
+            status=400,
+        )
+
+    csv_dir = Path(settings.BASE_DIR) / "live_csv_archive"
+
+    if not csv_dir.exists():
+        return Response(
+            {"error": "CSV folder not found", "path": str(csv_dir)},
+            status=404,
+        )
+
+    rows = []
+    files_checked = []
+
+    for csv_file in csv_dir.glob("*.csv"):
+        files_checked.append(str(csv_file.name))
+        try:
+            with open(csv_file, "r", encoding="utf-8", newline="") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    matched = False
+                    if source_match_id and str(row.get("source_match_id")) == str(source_match_id):
+                        matched = True
+                    if market_id and str(row.get("market_id")) == str(market_id):
+                        matched = True
+                    if runner_id and str(row.get("runner_id")) == str(runner_id):
+                        matched = True
+                    if matched:
+                        rows.append(row)
+        except Exception as e:
+            print(f"[match_csv_history] CSV read error: {csv_file} -> {e}")
+
+    rows.sort(
+        key=lambda x: (
+            safe_int(x.get("innings")) or 0,
+            safe_float(x.get("overs_float")) or 0,
+            x.get("ball_key") or "",
+            x.get("runner_id") or "",
+        )
+    )
+
+    # ── fetch runner names once per unique market_id ──────────────────────────
+    unique_market_ids = set(row.get("market_id") for row in rows if row.get("market_id"))
+    runner_name_cache = {}  # { market_id: { runner_id: runner_name } }
+    for mid in unique_market_ids:
+        runner_name_cache[mid] = fetch_market_runner_names(mid)
+    # ──────────────────────────────────────────────────────────────────────────
+
+    balls_map = OrderedDict()
+    market = []
+    patterns = []
+    full_rows = []
+    
+    for row in rows:
+        cricket_json = safe_json(row.get("cricket_json"))
+        price_json = safe_json(row.get("price_json"))
+        prediction_json = safe_json(row.get("prediction_json"))
+
+        ball_key = row.get("ball_key")
+        current_runner_id = row.get("runner_id")
+        current_market_id = row.get("market_id")
+
+        # get runner name from cache (API) first, then fallbacks
+        runner_name = (
+            row.get("runner_name")
+            or runner_name_cache.get(current_market_id, {}).get(str(current_runner_id))
+            or price_json.get("runner_name")
+            or price_json.get("selection_name")
+            or price_json.get("name")
+            or price_json.get("runner")
+        )
+
+        # ── inject runner_name into price_json ────────────────────────────────
+        price_json["runner_name"] = runner_name
+        # ──────────────────────────────────────────────────────────────────────
+
+        if ball_key not in balls_map:
+            balls_map[ball_key] = {
+                "source_match_id": row.get("source_match_id"),
+                "market_id": current_market_id,
+                "ball_key": ball_key,
+
+                "innings": safe_int(row.get("innings")),
+                "score": row.get("score"),
+                "score_num": safe_int(row.get("score_num")),
+                "wickets": safe_int(row.get("wickets")),
+                "overs": row.get("overs"),
+                "overs_float": safe_float(row.get("overs_float")),
+                "crr": safe_float(row.get("crr")),
+                "rrr": safe_float(row.get("rrr")),
+                "status": row.get("status"),
+                "state": row.get("state"),
+                "toss": row.get("toss"),
+                "target": safe_int(row.get("target")),
+                "phase": row.get("phase"),
+                "innings_type": row.get("innings_type"),
+                "recent": row.get("recent"),
+
+                "last5_runs": safe_float(row.get("last5_runs")),
+                "last5_wkts": safe_float(row.get("last5_wkts")),
+                "last3_runs": safe_float(row.get("last3_runs")),
+
+                "latest_ball": row.get("latest_ball"),
+                "commentary": row.get("latest_ball"),
+
+                "b1_name": row.get("b1_name"),
+                "b1_runs": safe_int(row.get("b1_runs")),
+                "b1_balls": safe_int(row.get("b1_balls")),
+                "b1_4s": safe_int(row.get("b1_4s")),
+                "b1_6s": safe_int(row.get("b1_6s")),
+                "b1_sr": safe_float(row.get("b1_sr")),
+
+                "b2_name": row.get("b2_name"),
+                "b2_runs": safe_int(row.get("b2_runs")),
+                "b2_balls": safe_int(row.get("b2_balls")),
+                "b2_4s": safe_int(row.get("b2_4s")),
+                "b2_6s": safe_int(row.get("b2_6s")),
+                "b2_sr": safe_float(row.get("b2_sr")),
+
+                "bw1_name": row.get("bw1_name"),
+                "bw1_overs": row.get("bw1_overs"),
+                "bw1_runs": safe_int(row.get("bw1_runs")),
+                "bw1_wkts": safe_int(row.get("bw1_wkts")),
+                "bw1_eco": safe_float(row.get("bw1_eco")),
+
+                "p_runs": safe_int(row.get("p_runs")),
+                "p_balls": safe_int(row.get("p_balls")),
+
+                "cricket_json": cricket_json,
+                "runners": [],
+            }
+
+        runner_payload = {
+            "runner_id": current_runner_id,
+            "runner_name": runner_name,
+
+            "ltp": safe_float(row.get("ltp")),
+            "prev_ltp": safe_float(row.get("prev_ltp")),
+            "tv": safe_float(row.get("tv")),
+            "market_updated_at": row.get("market_updated_at"),
+
+            "signal": row.get("signal"),
+            "signal_source": row.get("signal_source"),
+            "mode": row.get("mode"),
+            "price_going": row.get("price_going"),
+            "confidence": safe_float(row.get("confidence")),
+            "p_back": safe_float(row.get("p_back")),
+            "p_lay": safe_float(row.get("p_lay")),
+            "reason": row.get("reason"),
+
+            "pattern_name": row.get("pattern_name"),
+            "pattern_category": row.get("pattern_category"),
+            "pattern_category_label": row.get("pattern_category_label"),
+            "pattern_detail": row.get("pattern_detail"),
+            "pattern_description": row.get("pattern_description"),
+            "pattern_price_direction": row.get("pattern_price_direction"),
+            "pattern_avg_price_move": safe_float(row.get("pattern_avg_price_move")),
+            "pattern_historical_accuracy": safe_float(row.get("pattern_historical_accuracy")),
+            "pattern_color": row.get("pattern_color"),
+
+            "price_json": price_json,  # now includes runner_name
+            "prediction": prediction_json,
+        }
+
+        balls_map[ball_key]["runners"].append(runner_payload)
+
+        market.append({
+            "source_match_id": row.get("source_match_id"),
+            "market_id": current_market_id,
+            "runner_id": current_runner_id,
+            "runner_name": runner_name,
+            "ball_key": ball_key,
+            "ltp": safe_float(row.get("ltp")),
+            "prev_ltp": safe_float(row.get("prev_ltp")),
+            "tv": safe_float(row.get("tv")),
+            "market_updated_at": row.get("market_updated_at"),
+            "price_json": price_json,  # now includes runner_name
+        })
+
+        patterns.append({
+            "source_match_id": row.get("source_match_id"),
+            "market_id": current_market_id,
+            "runner_id": current_runner_id,
+            "runner_name": runner_name,
+            "ball_key": ball_key,
+            "signal": row.get("signal"),
+            "signal_source": row.get("signal_source"),
+            "mode": row.get("mode"),
+            "price_going": row.get("price_going"),
+            "confidence": safe_float(row.get("confidence")),
+            "p_back": safe_float(row.get("p_back")),
+            "p_lay": safe_float(row.get("p_lay")),
+            "reason": row.get("reason"),
+            "pattern_name": row.get("pattern_name"),
+            "pattern_category": row.get("pattern_category"),
+            "pattern_category_label": row.get("pattern_category_label"),
+            "pattern_detail": row.get("pattern_detail"),
+            "pattern_description": row.get("pattern_description"),
+            "pattern_price_direction": row.get("pattern_price_direction"),
+            "pattern_avg_price_move": safe_float(row.get("pattern_avg_price_move")),
+            "pattern_historical_accuracy": safe_float(row.get("pattern_historical_accuracy")),
+            "pattern_color": row.get("pattern_color"),
+            "prediction_json": prediction_json,
+        })
+
+        full_rows.append({
+            "source_match_id": row.get("source_match_id"),
+            "market_id": current_market_id,
+            "runner_id": current_runner_id,
+            "runner_name": runner_name,
+            "ball_key": ball_key,
+            "cricket": cricket_json,
+            "price": price_json,  # now includes runner_name
+            "prediction": prediction_json,
+            "raw_row": row,
+        })
+
+    balls = list(balls_map.values())
+
+    return Response({
+        "type": "match_history",
+        "filters": {
+            "source_match_id": source_match_id,
+            "market_id": market_id,
+            "runner_id": runner_id,
+        },
+        "csv_folder": str(csv_dir),
+        "files_checked": files_checked,
+        "total_rows": len(rows),
+        "total_balls": len(balls),
+        "history": {
+            "balls": balls,
+            "market": market,
+            "patterns": patterns,
+            "full_rows": full_rows,
+        },
+    })
+
+

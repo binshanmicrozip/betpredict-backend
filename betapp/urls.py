@@ -20,12 +20,15 @@ from .views import (
     PredictSignalView,
     LatestPredictionView,
     LoginAPIView,
+    match_csv_history,
 )
 from .views import LiveMatchStateViewSet, LiveDeliveryViewSet, LiveMarketTickViewSet
 from .views_match_history import match_history_detail_view
 from .views_player_stats import PlayerStatsView
 from .views_patterns import PatternListView, PatternDetailView
 from .views_signal import latest_signal_view
+
+
 
 router = DefaultRouter()
 
@@ -54,8 +57,17 @@ urlpatterns = [
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
 
     path("api/signal/", latest_signal_view, name="latest-signal"),
+    
 
     path("api/ipl-matches/<str:match_id>/history/", match_history_detail_view, name="match-history-detail"),
+    path("api/match-csv-history/", match_csv_history, name="match_csv_history"),
+
+
+
+  
+
+
+
 
     # custom player endpoints
     # path("api/player-search/", PlayerSearchAPIView.as_view(), name="player-search"),

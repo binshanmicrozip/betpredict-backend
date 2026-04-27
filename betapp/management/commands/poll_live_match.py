@@ -1,3 +1,4 @@
+
 # import csv
 # import json
 # import time
@@ -27,7 +28,7 @@
 #         output_dir = options["output_dir"]
 
 #         output_path = Path(output_dir)
-#         output_path.mkdir(exist_ok=True)
+#         output_path.mkdir(parents=True, exist_ok=True)
 
 #         match_csv = output_path / f"live_match_{match_id}_{source_match_id}.csv"
 #         commentary_csv = output_path / f"live_commentary_{match_id}_{source_match_id}.csv"
@@ -48,15 +49,31 @@
 #                     "source",
 #                     "status",
 #                     "state",
+
+#                     "team1_name",
+#                     "team2_name",
+
+#                     "toss_winner_id",
+#                     "toss_winner_name",
+#                     "toss_decision",
+#                     "batting_first_team",
+#                     "bowling_first_team",
+
 #                     "innings",
 #                     "batting_team",
 #                     "bowling_team",
 #                     "score",
+#                     "score_num",
 #                     "wickets",
 #                     "overs",
 #                     "target",
+#                     "rem_runs_to_win",
 #                     "crr",
 #                     "rrr",
+#                     "phase",
+#                     "innings_type",
+#                     "recent",
+#                     "latest_ball",
 #                     "raw_json",
 #                 ],
 #             )
@@ -100,12 +117,12 @@
 #                         time.sleep(interval)
 #                         continue
 
-#                     parsed = parse_live_data(raw)
+#                     parsed = parse_live_data(raw, source_match_id=source_match_id)
 #                     timestamp = datetime.now().isoformat()
 
-#                     # ---------------------------------------------
+#                     # --------------------------------------------------
 #                     # Save match snapshot to CSV
-#                     # ---------------------------------------------
+#                     # --------------------------------------------------
 #                     match_row = {
 #                         "timestamp": timestamp,
 #                         "match_id": match_id,
@@ -113,27 +130,42 @@
 #                         "source": "cricbuzz",
 #                         "status": parsed.get("status"),
 #                         "state": parsed.get("state"),
+
+#                         "team1_name": parsed.get("team1_name"),
+#                         "team2_name": parsed.get("team2_name"),
+
+#                         "toss_winner_id": parsed.get("toss_winner_id"),
+#                         "toss_winner_name": parsed.get("toss_winner_name"),
+#                         "toss_decision": parsed.get("toss_decision"),
+#                         "batting_first_team": parsed.get("batting_first_team"),
+#                         "bowling_first_team": parsed.get("bowling_first_team"),
+
 #                         "innings": parsed.get("innings"),
 #                         "batting_team": parsed.get("batting_team"),
 #                         "bowling_team": parsed.get("bowling_team"),
-#                         "score": parsed.get("score", 0),
+#                         "score": parsed.get("score", "0/0"),
+#                         "score_num": parsed.get("score_num", 0),
 #                         "wickets": parsed.get("wickets", 0),
 #                         "overs": str(parsed.get("overs", 0)),
-#                         "target": parsed.get("target"),
+#                         "target": parsed.get("target", 0),
+#                         "rem_runs_to_win": parsed.get("rem_runs_to_win", 0),
 #                         "crr": str(parsed.get("crr", 0)),
 #                         "rrr": str(parsed.get("rrr", 0)),
+#                         "phase": parsed.get("phase"),
+#                         "innings_type": parsed.get("innings_type"),
+#                         "recent": parsed.get("recent"),
+#                         "latest_ball": parsed.get("latest_ball"),
 #                         "raw_json": json.dumps(raw, ensure_ascii=False),
 #                     }
 #                     match_writer.writerow(match_row)
 #                     match_file.flush()
 
-#                     # ---------------------------------------------
+#                     # --------------------------------------------------
 #                     # Save commentary to CSV
-#                     # Cricbuzz live response usually has commentaryList
-#                     # ---------------------------------------------
+#                     # --------------------------------------------------
 #                     commentary_count = 0
-
 #                     commentary_items = []
+
 #                     if isinstance(raw, dict):
 #                         if raw.get("commentaryList"):
 #                             commentary_items = raw.get("commentaryList", [])
@@ -164,15 +196,24 @@
 
 #                     commentary_file.flush()
 
-#                     # ---------------------------------------------
+#                     # --------------------------------------------------
 #                     # Save latest parsed cricket data into Redis
-#                     # IMPORTANT: pass raw too
-#                     # ---------------------------------------------
+#                     # --------------------------------------------------
 #                     set_latest_cricket(source_match_id, parsed, raw)
 
 #                     self.stdout.write(
 #                         self.style.SUCCESS(
-#                             f"Saved to CSV and Redis: match={match_id}, commentary_rows={commentary_count}, source_match_id={source_match_id}"
+#                             f"[LIVE] "
+#                             f"match={match_id} "
+#                             f"source_match_id={source_match_id} "
+#                             f"state={parsed.get('state')} "
+#                             f"status={parsed.get('status')} "
+#                             f"toss_winner={parsed.get('toss_winner_name')} "
+#                             f"decision={parsed.get('toss_decision')} "
+#                             f"bat_first={parsed.get('batting_first_team')} "
+#                             f"bowl_first={parsed.get('bowling_first_team')} "
+#                             f"score={parsed.get('score')} "
+#                             f"commentary_rows={commentary_count}"
 #                         )
 #                     )
 

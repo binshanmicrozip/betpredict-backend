@@ -125,35 +125,75 @@ class Command(BaseCommand):
 
             token = api.get_access_token()
 
+            # Fetch live catalog from API to get proper runner names
+            self.stdout.write("[MarketWS] Fetching live catalog from API for runner names...")
+            try:
+                live_catalog = api.discover_live_market_catalog(only_with_market_count=False)
+                api_catalog_by_id = {
+                    str(item["market_id"]): item
+                    for item in live_catalog
+                    if item.get("market_id")
+                }
+                self.stdout.write(self.style.SUCCESS(
+                    f"[MarketWS] API catalog fetched: {len(api_catalog_by_id)} markets"
+                ))
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(
+                    f"[MarketWS] API catalog fetch failed ({e}), falling back to DB"
+                ))
+                api_catalog_by_id = {}
+
             from betapp.models import Market, Runner as RunnerModel
             for mid in subscribe_markets:
-                try:
-                    market_obj = Market.objects.get(market_id=mid)
-                    runners_qs = RunnerModel.objects.filter(market=market_obj)
-                    market_catalog.append({
-                        "market_id": mid,
-                        "event_id": market_obj.event_id or mid,
-                        "event_name": market_obj.event_name or f"Event {mid}",
-                        "sport_id": market_obj.event_type_id or "4",
-                        "sport_name": "Cricket",
-                        "tournament_id": "",
-                        "tournament_name": "",
-                        "market_name": market_obj.market_name or market_obj.market_type or "Match Odds",
-                        "market_type": market_obj.market_type or "MATCH_ODDS",
-                        "runners": [
-                            {"selection_id": str(r.selection_id), "runner_name": r.runner_name, "handicap": None}
-                            for r in runners_qs
-                        ],
-                    })
+                # Use API catalog entry if available (has proper runner names)
+                if mid in api_catalog_by_id:
+                    api_entry = api_catalog_by_id[mid]
+                    market_catalog.append(api_entry)
+                    runner_names = [r.get("runner_name") for r in api_entry.get("runners", [])]
                     self.stdout.write(self.style.SUCCESS(
-                        f"[MarketWS] Loaded catalog from DB for market {mid}: "
-                        f"{market_obj.event_name} | {market_obj.market_name} | "
-                        f"{runners_qs.count()} runners"
+                        f"[MarketWS] Catalog from API for market {mid}: "
+                        f"{api_entry.get('event_name')} | runners={runner_names}"
                     ))
-                except Market.DoesNotExist:
-                    self.stdout.write(self.style.WARNING(
-                        f"[MarketWS] Market {mid} not found in DB — runner names will be generic"
-                    ))
+                    # Also update DB Runner records with proper names
+                    try:
+                        market_obj = Market.objects.get(market_id=mid)
+                        for r in api_entry.get("runners", []):
+                            sel_id = r.get("selection_id")
+                            rname = (r.get("runner_name") or "").strip()
+                            if sel_id and rname and not rname.startswith("Runner "):
+                                RunnerModel.objects.filter(
+                                    market=market_obj, selection_id=sel_id
+                                ).update(runner_name=rname)
+                    except Exception:
+                        pass
+                else:
+                    # Fall back to DB
+                    try:
+                        market_obj = Market.objects.get(market_id=mid)
+                        runners_qs = RunnerModel.objects.filter(market=market_obj)
+                        market_catalog.append({
+                            "market_id": mid,
+                            "event_id": market_obj.event_id or mid,
+                            "event_name": market_obj.event_name or f"Event {mid}",
+                            "sport_id": market_obj.event_type_id or "4",
+                            "sport_name": "Cricket",
+                            "tournament_id": "",
+                            "tournament_name": "",
+                            "market_name": market_obj.market_name or market_obj.market_type or "Match Odds",
+                            "market_type": market_obj.market_type or "MATCH_ODDS",
+                            "runners": [
+                                {"selection_id": str(r.selection_id), "runner_name": r.runner_name, "handicap": None}
+                                for r in runners_qs
+                            ],
+                        })
+                        self.stdout.write(self.style.SUCCESS(
+                            f"[MarketWS] Catalog from DB for market {mid}: "
+                            f"{market_obj.event_name} | {runners_qs.count()} runners"
+                        ))
+                    except Market.DoesNotExist:
+                        self.stdout.write(self.style.WARNING(
+                            f"[MarketWS] Market {mid} not in API or DB — runner names will be generic"
+                        ))
 
             self.stdout.write(self.style.SUCCESS(
                 f"[MarketWS] Manual market ids provided: {len(subscribe_markets)}"

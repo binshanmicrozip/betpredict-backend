@@ -59,6 +59,7 @@
 
 #     return results
 
+
 import redis
 from django.conf import settings
 
@@ -105,10 +106,15 @@ def get_latest_price(market_id: str, runner_id: str) -> dict:
         "eid": data.get("eid"),
         "eti": data.get("eti"),
         "market_status": data.get("market_status"),
+        "in_play": data.get("in_play", "0"),
         "tdv": _to_float(data.get("tdv"), 0.0),
         "updated_at": _to_float(data.get("updated_at")),
         "source": data.get("source"),
         "message_type": data.get("message_type"),
+        "runner_name": data.get("runner_name") or "",
+        "event_name": data.get("event_name") or "",
+        "market_name": data.get("market_name") or "",
+        "market_type": data.get("market_type") or "",
     }
 
 
@@ -132,10 +138,15 @@ def get_all_market_prices(market_id: str) -> list[dict]:
             "eid": data.get("eid"),
             "eti": data.get("eti"),
             "market_status": data.get("market_status"),
+            "in_play": data.get("in_play", "0"),
             "tdv": _to_float(data.get("tdv"), 0.0),
             "updated_at": _to_float(data.get("updated_at")),
             "source": data.get("source"),
             "message_type": data.get("message_type"),
+            "runner_name": data.get("runner_name") or "",
+            "event_name": data.get("event_name") or "",
+            "market_name": data.get("market_name") or "",
+            "market_type": data.get("market_type") or "",
         })
 
     results.sort(key=lambda x: str(x.get("runner_id") or ""))
